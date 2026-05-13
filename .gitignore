@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+frontend-react/node_modules/
+
+# Environment variables
+.env
+*.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Build folders
+dist/
+build/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Payload/debug files
+payload-debug.json
+payload-log.json
+
+# Coverage
+coverage/
+
+# Cache
+.cache/
