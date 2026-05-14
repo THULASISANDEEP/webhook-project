@@ -1,4 +1,5 @@
-import { datoClient } from "./datocmsClient.js";
+//TODO
+/*import { datoClient } from "./datocmsClient.js";
 
 export const getActorFromVersion = async (versionId) => {
   try {
@@ -9,7 +10,7 @@ export const getActorFromVersion = async (versionId) => {
     console.log("📦 VERSION RESPONSE:");
     console.log(JSON.stringify(version, null, 2));
 
-    /* 🔥 HANDLE BOTH POSSIBLE STRUCTURES */
+    /* 🔥 HANDLE BOTH POSSIBLE STRUCTURES
     let editorId = null;
 
     if (version?.editor?.id) {
@@ -25,13 +26,13 @@ export const getActorFromVersion = async (versionId) => {
       return null;
     }
 
-    /* ================= USER ================= */
+    /* ================= USER ================= 
     const user = await datoClient.users.find(editorId);
 
     console.log("📦 USER RESPONSE:");
     console.log(JSON.stringify(user, null, 2));
 
-    /* 🔥 HANDLE ROLE STRUCTURE */
+     🔥 HANDLE ROLE STRUCTURE 
     let roleId = null;
 
     if (user?.relationships?.role?.data?.id) {
@@ -61,4 +62,4 @@ export const getActorFromVersion = async (versionId) => {
     console.error("❌ ACTOR ERROR:", err.message);
     return null;
   }
-};
+};*/

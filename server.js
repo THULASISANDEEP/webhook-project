@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+//TODO
 //import { getActorFromVersion } from "./services/datocmsService.js";
 
 dotenv.config();
@@ -29,6 +30,7 @@ const payloadSchema = new mongoose.Schema({
 
   /* 🔥 NEW FIELD */
   updatedBy: String,
+  //TODO
   //updatedByEmail: String,
   //updatedByRole: String,
 
@@ -57,6 +59,7 @@ app.post("/webhook", async (req, res) => {
 
     /* 🔥 ADD THIS */
     const entity = data.entity;
+    //TODO
     //const versionId = data.entity?.meta?.current_version;
 
     const entityId = data.entity?.id;
@@ -69,6 +72,8 @@ app.post("/webhook", async (req, res) => {
 
     const cmsLink = `https://${projectId}.admin.datocms.com/environments/${environment}/editor/item_types/${itemTypeId}/items/${entityId}`;
 
+
+    //TODO
     /* 🔥 ADD THIS (SAFE USER DETECTION) */
     
     /* 🔥 FETCH ACTOR INFO FROM VERSION */
@@ -81,6 +86,7 @@ app.post("/webhook", async (req, res) => {
       actor?.userId ||
       entity?.relationships?.creator?.data?.id ||
       "unknown";*/
+    //TODO
 
     /* ================== 🔥 STRICT EN TITLE ================== */
     const titleField = data.entity?.attributes?.title;
@@ -148,11 +154,13 @@ app.post("/webhook", async (req, res) => {
       cmsLink,
       dateKey,
 
+      //TODO
       /* 🔥 ADD THIS */
       //updatedBy
 
       //updatedByEmail: actor?.email || null,
       //updatedByRole: actor?.role || null,
+      //TODO
     };
 
     Object.entries(changesPerLocale).forEach(([locale, change]) => {
@@ -175,7 +183,7 @@ app.post("/webhook", async (req, res) => {
       },
       { upsert: true, returnDocument: "after" }
     );
-
+    //TODO
     /*console.log(
     "✅ Stored:",
     entityId,
@@ -186,7 +194,7 @@ app.post("/webhook", async (req, res) => {
     "| Role:",
     actor?.role
   );*/
-
+    //TODO
     res.status(200).json({ message: "Stored" });
 
   } catch (error) {
