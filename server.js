@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+//import { getActorFromVersion } from "./services/datocmsService.js";
 
 dotenv.config();
 
@@ -24,9 +25,12 @@ const payloadSchema = new mongoose.Schema({
   eventType: String,
   environment: String,
   cmsLink: String,
+  dateKey: String,
 
   /* 🔥 NEW FIELD */
   updatedBy: String,
+  //updatedByEmail: String,
+  //updatedByRole: String,
 
   localesChanged: {
     type: [String],
@@ -53,6 +57,7 @@ app.post("/webhook", async (req, res) => {
 
     /* 🔥 ADD THIS */
     const entity = data.entity;
+    //const versionId = data.entity?.meta?.current_version;
 
     const entityId = data.entity?.id;
     const itemTypeId =
@@ -65,10 +70,17 @@ app.post("/webhook", async (req, res) => {
     const cmsLink = `https://${projectId}.admin.datocms.com/environments/${environment}/editor/item_types/${itemTypeId}/items/${entityId}`;
 
     /* 🔥 ADD THIS (SAFE USER DETECTION) */
+    
+    /* 🔥 FETCH ACTOR INFO FROM VERSION */
+    /*const actor = versionId
+      ? await getActorFromVersion(versionId)
+      : null;
+
+    console.log("🎭 ACTOR:", actor);
     const updatedBy =
-      entity?.relationships?.updated_by?.data?.id ||
+      actor?.userId ||
       entity?.relationships?.creator?.data?.id ||
-      "unknown";
+      "unknown";*/
 
     /* ================== 🔥 STRICT EN TITLE ================== */
     const titleField = data.entity?.attributes?.title;
@@ -122,6 +134,7 @@ app.post("/webhook", async (req, res) => {
         }
       }
     }
+    const dateKey = new Date().toLocaleDateString("en-CA");
 
     /* ================== SAVE ================== */
     const updateObject = {
@@ -133,27 +146,46 @@ app.post("/webhook", async (req, res) => {
       eventType: data.event_type,
       environment,
       cmsLink,
+      dateKey,
 
       /* 🔥 ADD THIS */
-      updatedBy
+      //updatedBy
+
+      //updatedByEmail: actor?.email || null,
+      //updatedByRole: actor?.role || null,
     };
 
     Object.entries(changesPerLocale).forEach(([locale, change]) => {
       updateObject[`localeChanges.${locale}`] = change;
     });
 
+    /* 🔥 TODAY DATE KEY */
+    
+
     await Payload.findOneAndUpdate(
-      { entityId },
+      {
+        entityId,
+        dateKey
+      },
       {
         $set: updateObject,
         $addToSet: {
           localesChanged: { $each: Object.keys(changesPerLocale) }
         }
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" }
     );
 
-    console.log("✅ Stored:", entityId, "| User:", updatedBy);
+    /*console.log(
+    "✅ Stored:",
+    entityId,
+    "| User:",
+    updatedBy,
+    "| Email:",
+    actor?.email,
+    "| Role:",
+    actor?.role
+  );*/
 
     res.status(200).json({ message: "Stored" });
 

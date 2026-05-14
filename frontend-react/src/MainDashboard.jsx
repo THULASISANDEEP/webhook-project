@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import "./App.css";
 
 export default function MainDashboard() {
   const [data, setData] = useState([]);
@@ -21,6 +22,33 @@ export default function MainDashboard() {
     });
     fetchData();
   };
+  /* 🔥 EXTRACT TEXT FROM DATO STRUCTURED TEXT */
+  const getDisplayValue = (value) => {
+    if (!value) return "-";
+
+    /* NORMAL STRING */
+    if (typeof value === "string") return value;
+
+    /* STRUCTURED TEXT */
+    if (
+      typeof value === "object" &&
+      value.document?.children
+    ) {
+      try {
+        return value.document.children
+          .map((child) =>
+            child.children
+              ?.map((c) => c.value || "")
+              .join("")
+          )
+          .join(" ");
+      } catch {
+        return "[Structured Text]";
+      }
+    }
+
+    return JSON.stringify(value);
+  };
 
   /* 🔥 GROUP BY DATE */
   const grouped = data.reduce((acc, item) => {
@@ -31,16 +59,21 @@ export default function MainDashboard() {
   }, {});
 
   return (
-    <div style={{ padding: "20px", background: "#0b1a2f", minHeight: "100vh", color: "white" }}>
-      <h2>Webhook Dashboard</h2>
+    <div className="container">
+      <h2 className="page-title">
+  Webhook Dashboard
+</h2>
 
-      <Link to="/translator">🚫 Translator Page</Link>
+      <Link className="link-btn" to="/translator">
+  Translator Page
+</Link>
 
       {Object.keys(grouped).map((date) => (
-        <div key={date} style={{ marginTop: "20px" }}>
-          <h3>{date}</h3>
+        <div key={date}>
+          <h3 className="date-title">{date}</h3>
 
-          <table border="1" width="100%" style={{ background: "white", color: "black" }}>
+          <div className="table-wrapper">
+<table>
             <thead>
               <tr>
                 <th>Entity</th>
@@ -57,7 +90,7 @@ export default function MainDashboard() {
 
             <tbody>
               {grouped[date].map((item) => (
-                <>
+                <React.Fragment key={item._id}>
                   <tr key={item._id}>
                     <td>
                       <b>{item.title}</b>
@@ -110,9 +143,11 @@ export default function MainDashboard() {
         {locale} → {c.field}
       </div>
       <div>
-        <span style={{ color: "red" }}>{c.before || "-"}</span>
+        <span style={{ color: "red" }}>
+  {getDisplayValue(c.before)}</span>
         {" → "}
-        <span style={{ color: "green" }}>{c.after || "-"}</span>
+        <span style={{ color: "green" }}>
+  {getDisplayValue(c.after)}</span>
       </div>
     </div>
   ))
@@ -122,9 +157,11 @@ export default function MainDashboard() {
       {locale} → {changes.field}
     </div>
     <div>
-      <span style={{ color: "red" }}>{changes.before || "-"}</span>
+      <span style={{ color: "red" }}>
+  {getDisplayValue(changes.before)}</span>
       {" → "}
-      <span style={{ color: "green" }}>{changes.after || "-"}</span>
+      <span style={{ color: "green" }}>
+  {getDisplayValue(changes.after)}</span>
     </div>
   </div>
 )}
@@ -134,10 +171,11 @@ export default function MainDashboard() {
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       ))}
     </div>
