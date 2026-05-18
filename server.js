@@ -26,7 +26,6 @@ const payloadSchema = new mongoose.Schema({
   eventType: String,
   environment: String,
   cmsLink: String,
-  dateKey: String,
 
   /* 🔥 NEW FIELD */
   updatedBy: String,
@@ -140,28 +139,57 @@ app.post("/webhook", async (req, res) => {
         }
       }
     }
-    const dateKey = new Date().toLocaleDateString("en-CA");
+    
+
+    const currentStage = data.entity?.meta?.stage;
+    const previousStage = data.previous_entity?.meta?.stage;
 
     /* ================== SAVE ================== */
-    const updateObject = {
-      entityId,
-      title: titleValue,
-      itemTypeId,
-      stage: data.entity?.meta?.stage,
-      previousStage: data.previous_entity?.meta?.stage,
-      eventType: data.event_type,
-      environment,
-      cmsLink,
-      dateKey,
 
-      //TODO
+  const existingRecord = await Payload.findOne({
+    entityId,
+    
+  });
+
+  const updateObject = {
+    entityId,
+    title: titleValue,
+    itemTypeId,
+
+
+    eventType: data.event_type,
+    environment,
+    cmsLink,
+  
+  };
+  /* 🔥 DO NOT UPDATE STAGE INFO WHEN CURRENT STAGE = DRAFT */
+  if (currentStage !== "draft") {
+    updateObject.stage = currentStage;
+    updateObject.previousStage = previousStage;
+  }
+
+  /* 🔥 UPDATE TIME ONLY WHEN MOVED TO REVIEW */
+  if (currentStage === "review") {
+    updateObject.createdAt = new Date();
+  } else {
+    updateObject.createdAt =
+      existingRecord?.createdAt || new Date();
+  }
+
+
+
+
+
+
+
+
+//TODO
       /* 🔥 ADD THIS */
       //updatedBy
 
       //updatedByEmail: actor?.email || null,
       //updatedByRole: actor?.role || null,
       //TODO
-    };
 
     Object.entries(changesPerLocale).forEach(([locale, change]) => {
       updateObject[`localeChanges.${locale}`] = change;
@@ -172,8 +200,7 @@ app.post("/webhook", async (req, res) => {
 
     await Payload.findOneAndUpdate(
       {
-        entityId,
-        dateKey
+        entityId
       },
       {
         $set: updateObject,
