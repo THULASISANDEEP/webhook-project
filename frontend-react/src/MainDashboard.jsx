@@ -51,12 +51,7 @@ export default function MainDashboard() {
   };
 
   /* 🔥 GROUP BY DATE */
-  const grouped = data.reduce((acc, item) => {
-    const date = new Date(item.createdAt).toLocaleDateString();
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(item);
-    return acc;
-  }, {});
+  
 
   return (
     <div className="container">
@@ -68,9 +63,9 @@ export default function MainDashboard() {
   Translator Page
 </Link>
 
-      {Object.keys(grouped).map((date) => (
-        <div key={date}>
-          <h3 className="date-title">{date}</h3>
+      <div>
+        
+          
 
           <div className="table-wrapper">
 <table>
@@ -89,7 +84,7 @@ export default function MainDashboard() {
             </thead>
 
             <tbody>
-              {grouped[date].map((item) => (
+              {data.map((item) => (
                 <React.Fragment key={item._id}>
                   <tr key={item._id}>
                     <td>
@@ -98,7 +93,15 @@ export default function MainDashboard() {
                       <small>{item.entityId}</small>
                     </td>
 
-                    <td>{new Date(item.createdAt).toLocaleTimeString()}</td>
+                    <td>
+  <div>
+    {new Date(item.createdAt).toLocaleTimeString()}
+  </div>
+
+  <small style={{ color: "gray" }}>
+    {new Date(item.createdAt).toLocaleDateString()}
+  </small>
+</td>
 
                     <td>{item.localesChanged?.join(", ") || "-"}</td>
 
@@ -177,7 +180,7 @@ export default function MainDashboard() {
           </table>
           </div>
         </div>
-      ))}
-    </div>
+      </div>
+    
   );
 }
