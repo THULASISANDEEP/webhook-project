@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 
 /* ================== DB ================== */
 mongoose.connect(process.env.MONGO_URI)
@@ -129,11 +129,33 @@ app.post("/webhook", async (req, res) => {
               prevValue !== undefined &&
               JSON.stringify(currValue) !== JSON.stringify(prevValue)
             ) {
-              changesPerLocale[locale] = {
-                field,
-                before: prevValue,
-                after: currValue
-              };
+              if (!changesPerLocale[locale]) {
+                changesPerLocale[locale] = [];
+              }
+              /* CHECK IF FIELD ALREADY EXISTS */
+              const existingField = changesPerLocale[locale].find(
+                (item) => item.field === field
+              );
+
+              /* UPDATE EXISTING FIELD */
+              if (existingField) {
+                existingField.before = prevValue;
+                existingField.after = currValue;
+              } else {
+                /* ADD NEW FIELD */
+                changesPerLocale[locale].push({
+                  field,
+                  before: prevValue,
+                  after: currValue
+                });
+              }
+
+
+              // changesPerLocale[locale] = {
+              //   field,
+              //   before: prevValue,
+              //   after: currValue
+              // };
             }
           }
         }
@@ -190,12 +212,49 @@ app.post("/webhook", async (req, res) => {
       //updatedByEmail: actor?.email || null,
       //updatedByRole: actor?.role || null,
       //TODO
+      
 
-    Object.entries(changesPerLocale).forEach(([locale, change]) => {
-      updateObject[`localeChanges.${locale}`] = change;
-    });
 
     /* 🔥 TODAY DATE KEY */
+    /* 🔥 MERGE OLD + NEW FIELD CHANGES */
+updateObject.localeChanges =
+  existingRecord?.localeChanges || {};
+
+/* LOOP NEW CHANGES */
+Object.entries(changesPerLocale).forEach(
+  ([locale, changes]) => {
+
+    /* CREATE ARRAY */
+    if (!updateObject.localeChanges[locale]) {
+      updateObject.localeChanges[locale] = [];
+    }
+    if (!Array.isArray(updateObject.localeChanges[locale])) {
+      updateObject.localeChanges[locale] = [
+        updateObject.localeChanges[locale]
+      ];
+    }
+
+    changes.forEach((newChange) => {
+
+      /* FIND SAME FIELD */
+      const existingField =
+        updateObject.localeChanges[locale].find(
+          (item) => item.field === newChange.field
+        );
+
+      /* UPDATE EXISTING FIELD */
+      if (existingField) {
+        existingField.before = newChange.before;
+        existingField.after = newChange.after;
+      } else {
+
+        /* ADD NEW FIELD */
+        updateObject.localeChanges[locale].push(newChange);
+
+      }
+
+    });
+});
     
 
     await Payload.findOneAndUpdate(
