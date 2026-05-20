@@ -291,8 +291,18 @@ Object.entries(changesPerLocale).forEach(
 
 /* ================== GET ================== */
 app.get("/payloads", async (req, res) => {
-  const data = await Payload.find().sort({ createdAt: -1 });
-  res.json({ success: true, data });
+
+  const data = await Payload.find({
+    stage: {
+      $in: ["review", "approved", "reject"]
+    }
+  }).sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    data
+  });
+
 });
 
 /* ================== DELETE ================== */
