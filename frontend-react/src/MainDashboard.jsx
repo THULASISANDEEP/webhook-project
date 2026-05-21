@@ -173,24 +173,15 @@ export default function MainDashboard() {
       <Link className="link-btn" to="/translator">
   Translator Page
 </Link>
+
 <div
   style={{
-    fontSize: "14px",
-    color: "#666",
-    marginBottom: "12px",
-    marginTop: "10px",
-    fontWeight: "500",
-  }}
->
-  Total: {data.length} | Visible: {filteredData.length}
-</div>
-<div
-  style={{
-    display: "flex",
-    gap: "10px",
-    marginTop: "20px",
-    marginBottom: "20px",
-  }}
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "10px",
+  marginTop: "20px",
+  marginBottom: "20px",
+}}
 >
   <div
   style={{
@@ -311,22 +302,15 @@ boxShadow:
     setEndDate("");
   }}
 
-  onMouseOver={(e) => {
-    e.currentTarget.style.transform =
-      "translateY(-2px)";
-    e.currentTarget.style.boxShadow =
-      "0 8px 18px rgba(0,0,0,0.1)";
-  }}
-
-  onMouseOut={(e) => {
-    e.currentTarget.style.transform =
-      "translateY(0px)";
-    e.currentTarget.style.boxShadow =
-      "none";
-  }}
-
   style={{
-    transition: "0.3s",
+    padding: "10px 18px",
+    height: "45px",
+    borderRadius: "12px",
+    border: "1px solid #ccc",
+    background: "white",
+    cursor: "pointer",
+    fontSize: "14px",
+    minWidth: "80px",
   }}
 >
   Home
@@ -337,36 +321,23 @@ boxShadow:
     setShowLocales(false)
   }
 >
-  <button
+ <button
   onMouseEnter={() =>
     setShowLocales(true)
   }
 
-  onMouseOver={(e) => {
-    e.currentTarget.style.transform =
-      "translateY(-2px)";
-    e.currentTarget.style.boxShadow =
-      "0 8px 18px rgba(0,0,0,0.1)";
+  style={{
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
+    background: "white",
+    minWidth: "100px",
+    cursor: "pointer",
+    height: "45px",
   }}
-
-  onMouseOut={(e) => {
-    e.currentTarget.style.transform =
-      "translateY(0px)";
-    e.currentTarget.style.boxShadow =
-      "0 2px 6px rgba(0,0,0,0.05)";
-  }}
-    style={{
-      padding: "10px",
-      borderRadius: "8px",
-      border: "1px solid #ccc",
-      background: "white",
-      minWidth: "100px",
-      cursor: "pointer",
-      height: "45px",
-    }}
-  >
-    Locales ▼
-  </button>
+>
+  Locales ▼
+</button>
 
   {showLocales && (
     <div
@@ -530,15 +501,7 @@ setTimeout(() => {
     marginTop: "10px",
   }}
 >
-  <div
-    style={{
-      fontSize: "14px",
-      color: "#666",
-    }}
-  >
-    Total: {totalRecords} | Visible:{" "}
-    {currentRows.length}
-  </div>
+
 
   <select
     value={rowsPerPage}

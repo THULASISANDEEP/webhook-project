@@ -68,12 +68,23 @@ export default function TranslatorDashboard() {
       <Link to="/">← Back</Link>
       <div
   style={{
+    fontSize: "14px",
+    color: "#666",
+    marginBottom: "15px",
+    fontWeight: "500",
+  }}
+>
+  Total: {data.length} | Visible: {filteredData.length}
+</div>
+      <div
+  style={{
     display: "flex",
     gap: "10px",
     marginTop: "20px",
     marginBottom: "20px",
   }}
 >
+  
   {/* SEARCH */}
   <input
     type="text"
