@@ -1,51 +1,159 @@
-## Webhook for translators
+# Webhook Dashboard & Translator Workflow
 
-## Used technologies
+## Overview
 
-### Nuxt
+This project is used for handling DatoCMS webhook events and managing translator workflow tracking.
 
-### NVM
+The application:
+- Receives webhook payloads from DatoCMS
+- Stores payload data in MongoDB
+- Tracks workflow stages such as:
+  - Review
+  - Approved
+  - Reject
+- Displays records in the dashboard
+- Tracks translator-related actions using DatoCMS APIs
 
-NVM allows you to quickly install and use different versions of node via the command line.
+---
 
-[Read more](https://github.com/nvm-sh/nvm)
+# Technologies Used
 
-## Requirements
+## Frontend
+- React
+- Vite
 
-Below are the required tools which need to be installed before you can install and use the app. Go to each tool's website and follow their install instructions.
+## Backend
+- Node.js ( v20.20.0 )
+- Express.js
 
-- [NVM](https://github.com/nvm-sh/nvm) (Node Version Managment)
+## Database
+- MongoDB Atlas
+- Mongoose
 
-## Setup
+## Additional Tools
+- Ngrok
+- Dotenv
 
-1. Run `nvm use`. This will prompt you to install the given node version or activate the node version if it's already installed.
+---
 
-2. Run `npm install`. This will install all your node modules you need to run the application.
+# Requirements
 
-3. Create an `.env` file based on the `.env.example` file.
+Install the following before running the project:
 
-4. Use ngrok for connecting the Dato webhoook to the local server
+- Node.js
+- npm
+- MongoDB Atlas
+- VS Code
+- Ngrok
 
-6. Run `yarn dev --host`. This will run the Nuxt/Vue development server.
+---
 
-7. Go to https://local.ppds.com:3000 in your browser.
+# Project Setup
 
-8. Happy coding!
+## 1. Open the project
 
-## Running
+Open the project folder in VS Code.
 
-### DEV server
+---
 
-```shell
-npm run start
+## 2. Install backend dependencies
+
+Run:
+
+```bash
+
+npm install
+```
+## 3. Go to frontend folder
+
+Run:
+
+```bash
+cd frontend-react
+```
+## 4. Install frontend dependencies
+
+Run:
+
+```bash
+npm install
 ```
 
-**URL:** http://localhost:3000
+---
 
-### PROD server
+## 5. Create `.env` file
 
-```shell
-npm run build && npm run start
+Create a `.env` file in the main project folder.
+
+Add all required environment variables.
+
+Example:
+
+```env
+MONGO_URI=your_mongodb_connection_string
+DATOCMS_API_TOKEN=your_api_token
 ```
 
-**URL:** http://localhost:3000
+or 
+
+## there is a sample .env file in the project
+
+the required values can be just entered
+
+---
+
+# Running the Project
+
+Create a total of 3 terminals.
+
+---
+
+## Terminal 1 — Start Backend Server
+
+Run:
+
+```bash
+node server.js
+```
+
+---
+
+## Terminal 2 — Start Ngrok
+
+Run:
+
+```bash
+ngrok http 4000
+```
+
+Copy the generated HTTPS URL and use it in DatoCMS Webhook settings.
+
+---
+
+## Terminal 3 — Start Frontend
+
+Before running this command, make sure you are inside the `frontend-react` folder.
+
+Run:
+
+```bash
+npm run dev
+```
+
+---
+
+# Application URLs
+
+## Frontend
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Backend
+
+```text
+http://localhost:4000
+```
