@@ -14,6 +14,7 @@ export default function MainDashboard() {
   const [showLocales, setShowLocales] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
   const fetchData = async () => {
     const res = await fetch("http://localhost:4000/payloads");
@@ -25,6 +26,15 @@ export default function MainDashboard() {
   useEffect(() => {
     fetchData();
   }, []);
+  useEffect(() => {
+  applyFilters();
+}, [
+  search,
+  selectedLocales,
+  selectedStage,
+  startDate,
+  endDate,
+]);
 
   const handleSearch = () => {
     if (!search.trim()) {
@@ -141,6 +151,15 @@ export default function MainDashboard() {
   const totalPages = Math.ceil(
     filteredData.length / rowsPerPage
   );
+  const searchSuggestions = data.filter(
+    (item) =>
+      item.title
+        ?.toLowerCase()
+        .includes(search.toLowerCase()) ||
+      item.entityId
+        ?.toLowerCase()
+        .includes(search.toLowerCase())
+  );
 
   /* 🔥 GROUP BY DATE */
   
@@ -173,22 +192,115 @@ export default function MainDashboard() {
     marginBottom: "20px",
   }}
 >
+  <div
+  style={{
+    position: "relative",
+  }}
+>
   <input
     type="text"
     placeholder="Search title or record ID..."
     value={search}
-    onChange={(e) => setSearch(e.target.value)}
+    onChange={(e) => {
+      setSearch(e.target.value);
+      setShowSearchDropdown(true);
+      applyFilters();
+    }}
+    onFocus={() =>
+      setShowSearchDropdown(true)
+    }
+    onMouseEnter={() =>
+      setShowSearchDropdown(true)
+    }
+    onMouseOver={(e) => {
+      e.currentTarget.style.transform =
+        "translateY(-2px)";
+      e.currentTarget.style.boxShadow =
+        "0 8px 20px rgba(0,0,0,0.1)";
+    }}
+
+    onMouseOut={(e) => {
+      e.currentTarget.style.transform =
+        "translateY(0px)";
+      e.currentTarget.style.boxShadow =
+        "0 2px 10px rgba(0,0,0,0.05)";
+    }}
+    
     style={{
-      padding: "6px",
-      width: "300px",
-      borderRadius: "8px",
-      border: "1px solid #ccc",
+      padding: "12px 16px",
+      width: "320px",
+      borderRadius: "14px",
+      border: "1px solid #dcdcdc",
+      outline: "none",
+      fontSize: "15px",
+      background: "#fff",
+      boxShadow:
+        "0 2px 8px rgba(0,0,0,0.05)",
+      transition: "0.3s",
+      transition: "0.3s",
+boxShadow:
+  "0 2px 10px rgba(0,0,0,0.05)",
+  
     }}
   />
+  
+ 
+  {showSearchDropdown &&
+    search.trim() &&
+    searchSuggestions.length > 0 && (
+      <div
+        style={{
+  padding: "12px 16px",
+  width: "320px",
+  borderRadius: "14px",
+  border: "1px solid #dcdcdc",
+  outline: "none",
+  fontSize: "15px",
+  background: "#fff",
+  transition: "0.3s",
+  boxShadow:
+    "0 2px 10px rgba(0,0,0,0.05)",
+}}
+      >
+        {searchSuggestions.map((item) => (
+          <div
+            key={item._id}
+            onClick={() => {
+              setSearch(item.title);
+              setFilteredData([item]);
+              setShowSearchDropdown(false);
+            }}
+            style={{
+              padding: "14px",
+              cursor: "pointer",
+              borderBottom:
+                "1px solid #f1f1f1",
+            }}
+          >
+            <div
+              style={{
+                fontWeight: "600",
+                fontSize: "15px",
+              }}
+            >
+              {item.title}
+            </div>
 
-  <button onClick={applyFilters}>
-  Search
-</button>
+            <div
+              style={{
+                color: "#777",
+                fontSize: "13px",
+                marginTop: "4px",
+              }}
+            >
+              {item.entityId}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+</div>
+
   <button
   onClick={() => {
     setFilteredData(data);
@@ -198,14 +310,51 @@ export default function MainDashboard() {
     setStartDate("");
     setEndDate("");
   }}
+
+  onMouseOver={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(-2px)";
+    e.currentTarget.style.boxShadow =
+      "0 8px 18px rgba(0,0,0,0.1)";
+  }}
+
+  onMouseOut={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(0px)";
+    e.currentTarget.style.boxShadow =
+      "none";
+  }}
+
+  style={{
+    transition: "0.3s",
+  }}
 >
   Home
 </button>
-<div style={{ position: "relative" }}>
+<div
+  style={{ position: "relative" }}
+  onMouseLeave={() =>
+    setShowLocales(false)
+  }
+>
   <button
-    onClick={() =>
-      setShowLocales(!showLocales)
-    }
+  onMouseEnter={() =>
+    setShowLocales(true)
+  }
+
+  onMouseOver={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(-2px)";
+    e.currentTarget.style.boxShadow =
+      "0 8px 18px rgba(0,0,0,0.1)";
+  }}
+
+  onMouseOut={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(0px)";
+    e.currentTarget.style.boxShadow =
+      "0 2px 6px rgba(0,0,0,0.05)";
+  }}
     style={{
       padding: "10px",
       borderRadius: "8px",
@@ -221,9 +370,12 @@ export default function MainDashboard() {
 
   {showLocales && (
     <div
+     onMouseLeave={() =>
+      setShowLocales(false)
+    }
       style={{
         position: "absolute",
-        top: "50px",
+        top: "42px",
         left: 0,
         background: "white",
         border: "1px solid #ccc",
@@ -233,6 +385,7 @@ export default function MainDashboard() {
         minWidth: "120px",
         maxHeight: "200px",
         overflowY: "auto",
+        transition: "0.3s",
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
       }}
     >
@@ -251,10 +404,17 @@ export default function MainDashboard() {
             checked={selectedLocales.includes(locale)}
             onChange={(e) => {
               if (e.target.checked) {
-                setSelectedLocales([
-                  ...selectedLocales,
-                  locale,
-                ]);
+                const updated = e.target.checked
+  ? [...selectedLocales, locale]
+  : selectedLocales.filter(
+      (l) => l !== locale
+    );
+
+setSelectedLocales(updated);
+
+setTimeout(() => {
+  setShowLocales(false);
+}, 200);
               } else {
                 setSelectedLocales(
                   selectedLocales.filter(
@@ -274,7 +434,31 @@ export default function MainDashboard() {
 </div>
 <select
   value={selectedStage}
-  onChange={(e) => setSelectedStage(e.target.value)}
+  onChange={(e) =>
+    setSelectedStage(e.target.value)
+  }
+
+  onMouseEnter={(e) => e.target.focus()}
+  onMouseOver={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(-2px)";
+  }}
+
+  onMouseOut={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(0px)";
+  }}
+  style={{
+    padding: "12px",
+    borderRadius: "12px",
+    border: "1px solid #ddd",
+    background: "white",
+    cursor: "pointer",
+    fontSize: "14px",
+    transition: "0.3s",
+    boxShadow:
+      "0 2px 6px rgba(0,0,0,0.05)",
+  }}
 >
   <option value="">All Stages</option>
   <option value="review">Review</option>
@@ -285,13 +469,55 @@ export default function MainDashboard() {
 <input
   type="date"
   value={startDate}
-  onChange={(e) => setStartDate(e.target.value)}
+  onChange={(e) =>
+    setStartDate(e.target.value)
+  }
+  onMouseEnter={(e) => e.target.showPicker()}
+  onMouseOver={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(-2px)";
+  }}
+
+  onMouseOut={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(0px)";
+  }}
+  style={{
+    padding: "11px",
+    borderRadius: "12px",
+    border: "1px solid #ddd",
+    background: "white",
+    transition: "0.3s",
+    boxShadow:
+      "0 2px 6px rgba(0,0,0,0.05)",
+  }}
 />
 
 <input
   type="date"
   value={endDate}
-  onChange={(e) => setEndDate(e.target.value)}
+  onChange={(e) =>
+    setEndDate(e.target.value)
+  }
+  onMouseEnter={(e) => e.target.showPicker()}
+  onMouseOver={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(-2px)";
+  }}
+
+  onMouseOut={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(0px)";
+  }}
+  style={{
+    padding: "11px",
+    borderRadius: "12px",
+    border: "1px solid #ddd",
+    background: "white",
+    boxShadow:
+      "0 2px 6px rgba(0,0,0,0.05)",
+    transition: "0.3s",
+  }}
 />
 </div>
       <div>
@@ -332,7 +558,12 @@ export default function MainDashboard() {
   </select>
 </div>
           <div className="table-wrapper">
-<table>
+<table
+  style={{
+    borderCollapse: "separate",
+    borderSpacing: "0 10px",
+  }}
+>
             <thead>
               <tr>
                 <th>Entity</th>
@@ -350,8 +581,27 @@ export default function MainDashboard() {
             <tbody>
               {currentRows.map((item) => (
                 <React.Fragment key={item._id}>
-                  <tr id={item._id}
-  key={item._id}>
+                  <tr
+  id={item._id}
+  style={{
+    background: "white",
+    transition: "0.3s",
+    boxShadow:
+      "0 2px 10px rgba(0,0,0,0.04)",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform =
+      "scale(1.002)";
+    e.currentTarget.style.boxShadow =
+      "0 8px 20px rgba(0,0,0,0.08)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform =
+      "scale(1)";
+    e.currentTarget.style.boxShadow =
+      "0 2px 10px rgba(0,0,0,0.04)";
+  }}
+>
                     <td>
                       <b>{item.title}</b>
                       <br />
