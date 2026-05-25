@@ -1,20 +1,81 @@
-* {
+/* ═══════════════════════════════════════════════════════
+   index.css — Global reset & design tokens
+   Applied to the entire app via main.jsx
+═══════════════════════════════════════════════════════ */
+
+/* ── Google Font import (DM Sans: clean, modern, highly legible) ── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+/* ── CSS custom properties (design tokens) ── */
+:root {
+  /* Brand / primary */
+  --color-primary:        #6366F1;  /* indigo */
+  --color-primary-light:  #EEF2FF;
+  --color-primary-dark:   #4338CA;
+
+  /* Semantic */
+  --color-success:        #065F46;
+  --color-success-bg:     #D1FAE5;
+  --color-warning:        #856404;
+  --color-warning-bg:     #FFF3CD;
+  --color-danger:         #9F1239;
+  --color-danger-bg:      #FFE4E6;
+
+  /* Neutrals */
+  --color-text:           #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-muted:     #9CA3AF;
+  --color-border:         #E5E7EB;
+  --color-bg:             #F3F4F6;
+  --color-bg-subtle:      #F9FAFB;
+  --color-white:          #ffffff;
+
+  /* Typography */
+  --font-base: 'DM Sans', 'Segoe UI', sans-serif;
+
+  /* Radius */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+
+  /* Shadows */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md:   0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,0.10);
+}
+
+/* ── Hard reset ── */
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* ── Base body ── */
 body {
-  background: #f5f5f5;
-  color: #111827;
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-base);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* ── Remove default link underline; colour handled per-component ── */
 a {
   text-decoration: none;
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
+/* ── All buttons inherit font so they match the page ── */
 button {
   cursor: pointer;
+  font-family: var(--font-base);
+}
+
+/* ── Remove default select appearance for consistency ── */
+select {
+  font-family: var(--font-base);
 }
