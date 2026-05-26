@@ -678,3 +678,48 @@
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* ════════════════════
+   CUSTOM DATE BOX
+   A styled <div> that acts as the visible date
+   picker button. The actual <input type="date">
+   is hidden (opacity 0, zero size) so the browser
+   "dd-mm-yyyy" placeholder never shows. Clicking
+   the box calls .showPicker() on the hidden input.
+════════════════════ */
+.date-box {
+  position: relative;          /* anchor for the hidden input */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  user-select: none;
+}
+
+.date-box:hover {
+  border-color: var(--color-primary);
+}
+
+/* Calendar emoji icon */
+.date-box__icon {
+  font-size: 15px;
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+/* The text shown inside the box:
+   - "Start date" / "End date" when empty (muted)
+   - The formatted date string when a value is set  */
+.date-box__label {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-family: var(--font-base);
+  white-space: nowrap;
+}

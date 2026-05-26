@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "./App.css";
  
 
@@ -20,6 +20,10 @@ export default function TranslatorDashboard() {
   const [rowsPerPage, setRowsPerPage] = useState(10);   // rows per page
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [expanded, setExpanded] = useState(null); // expanded row _id for locale detail
+
+  /* Refs for hidden date inputs — used to call .showPicker() on box click */
+  const fromDateRef = useRef(null);
+  const toDateRef   = useRef(null);
 
   /* ── Fetch rejected records on mount ── */
   useEffect(() => {
@@ -174,22 +178,63 @@ export default function TranslatorDashboard() {
           )}
         </div>
 
-        {/* Date range pickers */}
-        <input
-          type="date"
-          className="date-input"
-          value={fromDate}
-          onChange={(e) => { setFromDate(e.target.value); setCurrentPage(1); }}
+        {/* ── Date range pickers ──
+            Hidden native inputs; clicking the styled box calls .showPicker()
+            so no "dd-mm-yyyy" placeholder is ever visible.
+        ── */}
+        <div
+          className="date-box"
+          onClick={() => fromDateRef.current?.showPicker()}
           title="From date"
-        />
+        >
+          <span className="date-box__icon">📅</span>
+          <span className="date-box__label">
+            {fromDate
+              ? new Date(fromDate + "T00:00:00").toLocaleDateString()
+              : "Start date"}
+          </span>
+          <input
+            ref={fromDateRef}
+            type="date"
+            value={fromDate}
+            onChange={(e) => { setFromDate(e.target.value); setCurrentPage(1); }}
+            style={{
+              position: "absolute",
+              opacity: 0,
+              width: 0,
+              height: 0,
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+
         <span style={{ color: "var(--color-text-muted)", fontSize: "13px" }}>→</span>
-        <input
-          type="date"
-          className="date-input"
-          value={toDate}
-          onChange={(e) => { setToDate(e.target.value); setCurrentPage(1); }}
-          title="To date"
-        />
+
+        <div
+          className="date-box"
+          onClick={() => toDateRef.current?.showPicker()}
+          title="End date"
+        >
+          <span className="date-box__icon">📅</span>
+          <span className="date-box__label">
+            {toDate
+              ? new Date(toDate + "T00:00:00").toLocaleDateString()
+              : "End date"}
+          </span>
+          <input
+            ref={toDateRef}
+            type="date"
+            value={toDate}
+            onChange={(e) => { setToDate(e.target.value); setCurrentPage(1); }}
+            style={{
+              position: "absolute",
+              opacity: 0,
+              width: 0,
+              height: 0,
+              pointerEvents: "none",
+            }}
+          />
+        </div>
 
         {/* Reset — only shows when filters are active */}
         {hasActiveFilters && (

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./App.css";
 
@@ -37,23 +37,16 @@ export const Navbar = ({ onHomeClick, recordCount }) => {
       <div className="navbar__left">
         <span className="navbar__brand">⚡ WebhookCMS</span>
 
-        {/* Home resets filters when on the main page */}
-        <button
+        {/* Admin — navigates to the main dashboard (/) */}
+        <Link
+          to="/"
           onClick={onHomeClick}
           className={`navbar__link ${location.pathname === "/" ? "navbar__link--active" : ""}`}
         >
-          Home
-        </button>
-
-        {/* Translator page link */}
-        <Link
-          to="/"
-          className={`navbar__link ${location.pathname === "/MainDashboard" ? "navbar__link--active" : ""}`}
-        >
           Admin
         </Link>
-      
-        
+
+        {/* Translator page link */}
         <Link
           to="/translator"
           className={`navbar__link ${location.pathname === "/translator" ? "navbar__link--active" : ""}`}
@@ -88,9 +81,14 @@ export default function MainDashboard() {
   const [search, setSearch] = useState("");                   // search query
   const [expanded, setExpanded] = useState(null);             // _id of expanded row
   const [showLocales, setShowLocales] = useState(false);      // locale dropdown open
+  const [showStage, setShowStage] = useState(false);          // stage dropdown open
   const [currentPage, setCurrentPage] = useState(1);         // current page number
   const [rowsPerPage, setRowsPerPage] = useState(10);         // rows shown per page
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
+  /* Refs for hidden date inputs — used to call .showPicker() on box click */
+  const startDateRef = useRef(null);
+  const endDateRef   = useRef(null);
 
   /* ── Load all payloads (review / approved / reject) on mount ── */
   const fetchData = async () => {
@@ -275,11 +273,11 @@ export default function MainDashboard() {
           )}
         </div>
 
-        {/* Locales multi-select dropdown */}
-        <div style={{ position: "relative" }} onMouseLeave={() => setShowLocales(false)}>
+        {/* ── Locales dropdown — click to open/close, scrollable if >4 locales ── */}
+        <div style={{ position: "relative" }}>
           <button
             className={`filter-btn ${selectedLocales.length > 0 ? "filter-btn--active" : ""}`}
-            onMouseEnter={() => setShowLocales(true)}
+            onClick={() => { setShowLocales((v) => !v); setShowStage(false); }}
           >
             🌐 Locales
             {selectedLocales.length > 0 && (
@@ -289,58 +287,152 @@ export default function MainDashboard() {
           </button>
 
           {showLocales && (
-            <div className="locale-dropdown">
-              <div className="locale-dropdown__heading">Filter by locale</div>
-              {allLocales.length === 0 ? (
-                <div style={{ padding: "8px", color: "var(--color-text-muted)", fontSize: "13px" }}>
-                  No locales found
-                </div>
-              ) : (
-                allLocales.map((locale) => (
-                  <label key={locale} className="locale-dropdown__label">
-                    <input
-                      type="checkbox"
-                      checked={selectedLocales.includes(locale)}
-                      style={{ accentColor: "var(--color-primary)" }}
-                      onChange={(e) =>
-                        setSelectedLocales(
-                          e.target.checked
-                            ? [...selectedLocales, locale]
-                            : selectedLocales.filter((l) => l !== locale)
-                        )
-                      }
-                    />
-                    {locale.toUpperCase()}
-                  </label>
-                ))
-              )}
-              {selectedLocales.length > 0 && (
-                <button className="locale-dropdown__clear" onClick={() => setSelectedLocales([])}>
-                  Clear all
-                </button>
-              )}
-            </div>
+            /* Close when clicking outside */
+            <>
+              <div
+                style={{ position: "fixed", inset: 0, zIndex: 99 }}
+                onClick={() => setShowLocales(false)}
+              />
+              <div className="locale-dropdown" style={{ zIndex: 100 }}>
+                <div className="locale-dropdown__heading">Filter by locale</div>
+                {allLocales.length === 0 ? (
+                  <div style={{ padding: "8px", color: "var(--color-text-muted)", fontSize: "13px" }}>
+                    No locales found
+                  </div>
+                ) : (
+                  /* Show max 4 items, scroll the rest */
+                  <div style={{ maxHeight: "calc(4 * 38px)", overflowY: "auto" }}>
+                    {allLocales.map((locale) => (
+                      <label key={locale} className="locale-dropdown__label">
+                        <input
+                          type="checkbox"
+                          checked={selectedLocales.includes(locale)}
+                          style={{ accentColor: "var(--color-primary)" }}
+                          onChange={(e) =>
+                            setSelectedLocales(
+                              e.target.checked
+                                ? [...selectedLocales, locale]
+                                : selectedLocales.filter((l) => l !== locale)
+                            )
+                          }
+                        />
+                        {locale.toUpperCase()}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {selectedLocales.length > 0 && (
+                  <button className="locale-dropdown__clear" onClick={() => setSelectedLocales([])}>
+                    Clear all
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
 
-        {/* Stage filter */}
-        <select
-          className="filter-select"
-          value={selectedStage}
-          onChange={(e) => setSelectedStage(e.target.value)}
-        >
-          <option value="">All Stages</option>
-          <option value="review">Review</option>
-          <option value="approved">Approved</option>
-          <option value="reject">Reject</option>
-        </select>
+        {/* ── Stage dropdown — same click-to-open style as Locales ── */}
+        <div style={{ position: "relative" }}>
+          <button
+            className={`filter-btn ${selectedStage ? "filter-btn--active" : ""}`}
+            onClick={() => { setShowStage((v) => !v); setShowLocales(false); }}
+          >
+            {selectedStage
+              ? selectedStage.charAt(0).toUpperCase() + selectedStage.slice(1)
+              : "All Stages"}
+            <span style={{ opacity: 0.5, fontSize: "11px" }}>▼</span>
+          </button>
 
-        {/* Date range pickers */}
-        <input type="date" className="date-input" value={startDate}
-          onChange={(e) => setStartDate(e.target.value)} title="From date" />
+          {showStage && (
+            <>
+              {/* Click-away backdrop */}
+              <div
+                style={{ position: "fixed", inset: 0, zIndex: 99 }}
+                onClick={() => setShowStage(false)}
+              />
+              <div className="locale-dropdown" style={{ zIndex: 100, minWidth: "140px" }}>
+                <div className="locale-dropdown__heading">Filter by stage</div>
+                {["", "review", "approved", "reject"].map((stage) => (
+                  <div
+                    key={stage}
+                    className="locale-dropdown__label"
+                    style={{
+                      cursor: "pointer",
+                      fontWeight: selectedStage === stage ? 600 : 400,
+                      color: selectedStage === stage ? "var(--color-primary)" : "var(--color-text-secondary)",
+                      background: selectedStage === stage ? "var(--color-primary-light)" : "transparent",
+                      borderRadius: "var(--radius-sm)",
+                    }}
+                    onClick={() => { setSelectedStage(stage); setShowStage(false); }}
+                  >
+                    {stage === "" ? "All Stages" : stage.charAt(0).toUpperCase() + stage.slice(1)}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ── Date range pickers ──
+            The native <input type="date"> is hidden (opacity 0, zero size).
+            Clicking anywhere on the styled box calls .showPicker() on the
+            hidden input, so the calendar opens without any "dd-mm-yyyy"
+            placeholder text ever being visible.
+        ── */}
+        <div
+          className="date-box"
+          onClick={() => startDateRef.current?.showPicker()}
+          title="From date"
+        >
+          <span className="date-box__icon">📅</span>
+          <span className="date-box__label">
+            {startDate
+              ? new Date(startDate + "T00:00:00").toLocaleDateString()
+              : "Start date"}
+          </span>
+          {/* Hidden native input — positioned off-screen so it takes no space */}
+          <input
+            ref={startDateRef}
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            style={{
+              position: "absolute",
+              opacity: 0,
+              width: 0,
+              height: 0,
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+
         <span style={{ color: "var(--color-text-muted)", fontSize: "13px" }}>→</span>
-        <input type="date" className="date-input" value={endDate}
-          onChange={(e) => setEndDate(e.target.value)} title="To date" />
+
+        <div
+          className="date-box"
+          onClick={() => endDateRef.current?.showPicker()}
+          title="End date"
+        >
+          <span className="date-box__icon">📅</span>
+          <span className="date-box__label">
+            {endDate
+              ? new Date(endDate + "T00:00:00").toLocaleDateString()
+              : "End date"}
+          </span>
+          <input
+            ref={endDateRef}
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            style={{
+              position: "absolute",
+              opacity: 0,
+              width: 0,
+              height: 0,
+              pointerEvents: "none",
+            }}
+          />
+        </div>
 
         {/* Reset button — visible only when filters are active */}
         {hasActiveFilters && (

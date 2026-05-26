@@ -19,6 +19,7 @@ export const getActorFromVersion = async (versionId) => {
     }
 
     const user = await datoClient.users.find(editorId);
+    console.dir(user)
 
     if (user?.relationships?.role?.data?.id) {
       roleId = user.relationships.role.data.id;
