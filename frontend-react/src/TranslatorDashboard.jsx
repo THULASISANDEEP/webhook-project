@@ -27,7 +27,7 @@ export default function TranslatorDashboard() {
 
   /* ── Fetch rejected records on mount ── */
   useEffect(() => {
-    fetch("http://localhost:4000/payloads")
+    fetch("http://localhost:4000/records")
       .then((res) => res.json())
       .then((res) => {
         /* Only keep records with stage = "reject" */
@@ -272,7 +272,7 @@ export default function TranslatorDashboard() {
                 <th>Time</th>
                 <th>Locales</th>
                 <th>Stage</th>
-                <th>Environment</th>
+                <th>USER</th>
                 <th>CMS</th>
                 <th>More</th>
               </tr>
@@ -327,7 +327,7 @@ export default function TranslatorDashboard() {
                       <td><StageBadge value={item.stage} /></td>
 
                       {/* Environment */}
-                      <td><span className="env-tag">{item.environment || "—"}</span></td>
+                      <td>{item.updatedByNames?.join(", ") || "-"}</td>
 
                       {/* CMS link */}
                       <td>

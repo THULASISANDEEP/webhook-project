@@ -484,20 +484,7 @@
 }
 
 /* ── Delete row button ── */
-.delete-btn {
-  border: none;
-  background: transparent;
-  color: #EF4444;
-  font-size: 16px;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  transition: background 0.12s, color 0.12s;
-}
-
-.delete-btn:hover {
-  background: #FEE2E2;
-  color: #B91C1C;
-}
+/*i have removed the delete button*/
 
 /* ── Expand "More" toggle button ── */
 .more-btn {

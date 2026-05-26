@@ -21,23 +21,31 @@ export const getActorFromVersion = async (versionId) => {
     const user = await datoClient.users.find(editorId);
     console.dir(user)
 
-    if (user?.relationships?.role?.data?.id) {
-      roleId = user.relationships.role.data.id;
-    } else if (user?.role?.id) {
-      roleId = user.role.id;
-    }
+    // if (user?.relationships?.role?.data?.id) {
+    //   roleId = user.relationships.role.data.id;
+    // } else if (user?.role?.id) {
+    //   roleId = user.role.id;
+    // }
 
-    let role = null;
+    // let role = null;
 
-    if (roleId) {
-      role = await datoClient.roles.find(roleId);
-    }
+    // if (roleId) {
+    //   role = await datoClient.roles.find(roleId);
+    // }
 
     return {
       userId: editorId,
-      email: user?.attributes?.email || user?.email || null,
-      role: role?.attributes?.name || role?.name || "unknown",
+      name:
+        user?.full_name ||
+        user?.attributes?.full_name ||
+        "Unknown",
+
+      email:
+        user?.attributes?.email ||
+        user?.email ||
+        null,
     };
+      // role: role?.attributes?.name || role?.name || "unknown",
   } catch (err) {
     console.error("❌ ACTOR ERROR:", err.message);
     return null;

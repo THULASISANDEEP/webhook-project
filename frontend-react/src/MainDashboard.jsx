@@ -56,6 +56,7 @@ export const Navbar = ({ onHomeClick, recordCount }) => {
       </div>
 
       <div className="navbar__right">
+        <div>ENVIRONMENT = DEVELOPMENT</div>
         {recordCount !== undefined && (
           <span className="navbar__count">
             {recordCount} record{recordCount !== 1 ? "s" : ""}
@@ -92,7 +93,7 @@ export default function MainDashboard() {
 
   /* ── Load all payloads (review / approved / reject) on mount ── */
   const fetchData = async () => {
-    const res = await fetch("http://localhost:4000/payloads");
+    const res = await fetch("http://localhost:4000/records");
     const json = await res.json();
     setData(json.data || []);
     setFilteredData(json.data || []);
@@ -150,10 +151,8 @@ export default function MainDashboard() {
   };
 
   /* ── Delete a record and refresh the list ── */
-  const deleteItem = async (id) => {
-    await fetch(`http://localhost:4000/payloads/${id}`, { method: "DELETE" });
-    fetchData();
-  };
+  /*i have removed the delete button*/
+
 
   /* ── Reset every filter and restore full dataset ── */
   const resetFilters = () => {
@@ -468,9 +467,8 @@ export default function MainDashboard() {
                 <th>Locales</th>
                 <th>Stage</th>
                 <th>Previous</th>
-                <th>Environment</th>
+                <th>USER</th>
                 <th>CMS</th>
-                <th>Delete</th>
                 <th>More</th>
               </tr>
             </thead>
@@ -523,7 +521,7 @@ export default function MainDashboard() {
                       <td><StageBadge value={item.previousStage} /></td>
 
                       {/* Environment */}
-                      <td><span className="env-tag">{item.environment || "—"}</span></td>
+                      <td>{item.updatedByNames?.join(", ") || "-"}</td>
 
                       {/* CMS link */}
                       <td>
@@ -531,11 +529,6 @@ export default function MainDashboard() {
                           ? <a href={item.cmsLink} target="_blank" rel="noreferrer" className="cms-link">Open ↗</a>
                           : <span style={{ color: "var(--color-border)" }}>—</span>
                         }
-                      </td>
-
-                      {/* Delete */}
-                      <td>
-                        <button className="delete-btn" onClick={() => deleteItem(item._id)}>🗑</button>
                       </td>
 
                       {/* Expand toggle */}

@@ -25,6 +25,13 @@ const recordSchema = new mongoose.Schema({
   eventType: String,
   environment: String,
   cmsLink: String,
+  updatedBy: String,
+  updatedByEmail: String,
+
+  updatedByNames: {
+    type: [String],
+    default: []
+  },
 
   localesChanged: {
     type: [String],
@@ -165,11 +172,15 @@ app.post("/webhook", async (req, res) => {
     title: titleValue,
     itemTypeId,
 
-
     eventType: data.event_type,
     environment,
     cmsLink,
-  
+
+    updatedBy:
+      actor?.name || "Unknown",
+
+    updatedByEmail:
+      actor?.email || null,
   };
   // DO NOT UPDATE STAGE INFO WHEN CURRENT STAGE = DRAFT
   if (currentStage !== "draft") {
@@ -232,8 +243,12 @@ Object.entries(changesPerLocale).forEach(
       {
         $set: updateObject,
         $addToSet: {
-          localesChanged: { $each: Object.keys(changesPerLocale) }
+          localesChanged: { $each: Object.keys(changesPerLocale)
+
+           },
+           updatedByNames: actor?.name
         }
+        
       },
       { upsert: true, returnDocument: "after" }
     );
@@ -274,10 +289,7 @@ app.get("/records", async (req, res) => {
 });
 
 /* ================== DELETE ================== */
-// app.delete("/records/:id", async (req, res) => {
-//   await Record.findByIdAndDelete(req.params.id);
-//   res.json({ success: true });
-// });
+/*i have removed the delete button*/
 
 /* ================== SERVER ================== */
 app.listen(4000, () => {
