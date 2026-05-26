@@ -56,12 +56,14 @@ export const Navbar = ({ onHomeClick, recordCount }) => {
       </div>
 
       <div className="navbar__right">
-        <div>ENVIRONMENT = DEVELOPMENT</div>
+        {/* Record count pill */}
         {recordCount !== undefined && (
           <span className="navbar__count">
             {recordCount} record{recordCount !== 1 ? "s" : ""}
           </span>
         )}
+        {/* Environment badge */}
+        <span className="navbar__env-badge">⚙ Development</span>
       </div>
     </nav>
   );
@@ -83,6 +85,8 @@ export default function MainDashboard() {
   const [expanded, setExpanded] = useState(null);             // _id of expanded row
   const [showLocales, setShowLocales] = useState(false);      // locale dropdown open
   const [showStage, setShowStage] = useState(false);          // stage dropdown open
+  const [showUsers, setShowUsers] = useState(false);          // user dropdown open
+  const [selectedUsers, setSelectedUsers] = useState([]);     // active user filters
   const [currentPage, setCurrentPage] = useState(1);         // current page number
   const [rowsPerPage, setRowsPerPage] = useState(10);         // rows shown per page
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -103,7 +107,7 @@ export default function MainDashboard() {
 
   /* Re-apply filters whenever any filter value or the base data changes */
   useEffect(() => { applyFilters(); }, [
-    search, selectedLocales, selectedStage, startDate, endDate, data,
+    search, selectedLocales, selectedStage, selectedUsers, startDate, endDate, data,
   ]);
 
   /* ── Filter logic — runs against raw `data` each time ── */
@@ -124,6 +128,13 @@ export default function MainDashboard() {
     if (selectedLocales.length > 0) {
       filtered = filtered.filter((item) =>
         selectedLocales.some((l) => item.localesChanged?.includes(l))
+      );
+    }
+
+    /* User filter: row must include at least one selected user name */
+    if (selectedUsers.length > 0) {
+      filtered = filtered.filter((item) =>
+        selectedUsers.some((u) => (item.updatedByNames || []).includes(u))
       );
     }
 
@@ -159,6 +170,7 @@ export default function MainDashboard() {
     setSearch("");
     setSelectedLocales([]);
     setSelectedStage("");
+    setSelectedUsers([]);
     setStartDate("");
     setEndDate("");
     setCurrentPage(1);
@@ -187,6 +199,9 @@ export default function MainDashboard() {
   /* ── Collect unique locales from all loaded records ── */
   const allLocales = [...new Set(data.flatMap((item) => item.localesChanged || []))];
 
+  /* ── Collect unique user names from all loaded records ── */
+  const allUsers = [...new Set(data.flatMap((item) => item.updatedByNames || []).filter(Boolean))];
+
   /* ── Pagination ── */
   const totalPages   = Math.ceil(filteredData.length / rowsPerPage);
   const indexOfLast  = currentPage * rowsPerPage;
@@ -214,7 +229,7 @@ export default function MainDashboard() {
 
   /* Show reset button only when something is active */
   const hasActiveFilters =
-    search || selectedLocales.length > 0 || selectedStage || startDate || endDate;
+    search || selectedLocales.length > 0 || selectedStage || selectedUsers.length > 0 || startDate || endDate;
 
   /* ═══════════════════════════════════════════
      RENDER
@@ -372,6 +387,63 @@ export default function MainDashboard() {
           )}
         </div>
 
+        {/* ── User dropdown — same pattern as Locales ── */}
+        <div style={{ position: "relative" }}>
+          <button
+            className={`filter-btn ${selectedUsers.length > 0 ? "filter-btn--active" : ""}`}
+            onClick={() => { setShowUsers((v) => !v); setShowLocales(false); setShowStage(false); }}
+          >
+            👤 Users
+            {selectedUsers.length > 0 && (
+              <span className="filter-btn__count">{selectedUsers.length}</span>
+            )}
+            <span style={{ opacity: 0.5, fontSize: "11px" }}>▼</span>
+          </button>
+
+          {showUsers && (
+            <>
+              <div
+                style={{ position: "fixed", inset: 0, zIndex: 99 }}
+                onClick={() => setShowUsers(false)}
+              />
+              <div className="locale-dropdown" style={{ zIndex: 100, minWidth: "200px" }}>
+                <div className="locale-dropdown__heading">Filter by user</div>
+                {allUsers.length === 0 ? (
+                  <div style={{ padding: "8px", color: "var(--color-text-muted)", fontSize: "13px" }}>
+                    No users found
+                  </div>
+                ) : (
+                  /* Max 4 visible, scroll the rest */
+                  <div style={{ maxHeight: "calc(4 * 38px)", overflowY: "auto" }}>
+                    {allUsers.map((user) => (
+                      <label key={user} className="locale-dropdown__label">
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.includes(user)}
+                          style={{ accentColor: "var(--color-primary)" }}
+                          onChange={(e) =>
+                            setSelectedUsers(
+                              e.target.checked
+                                ? [...selectedUsers, user]
+                                : selectedUsers.filter((u) => u !== user)
+                            )
+                          }
+                        />
+                        {user}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {selectedUsers.length > 0 && (
+                  <button className="locale-dropdown__clear" onClick={() => setSelectedUsers([])}>
+                    Clear all
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
         {/* ── Date range pickers ──
             The native <input type="date"> is hidden (opacity 0, zero size).
             Clicking anywhere on the styled box calls .showPicker() on the
@@ -502,16 +574,25 @@ export default function MainDashboard() {
                         </div>
                       </td>
 
-                      {/* Locale chips */}
+                      {/* Locale chips — truncated to fit column, full list on hover */}
                       <td>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "3px", justifyContent: "center" }}>
-                          {(item.localesChanged || []).length > 0
-                            ? item.localesChanged.map((loc) => (
-                                <span key={loc} className="locale-tag">{loc}</span>
-                              ))
-                            : <span style={{ color: "var(--color-border)" }}>—</span>
-                          }
-                        </div>
+                        {(item.localesChanged || []).length > 0 ? (
+                          <div
+                            className="locale-cell"
+                            title={item.localesChanged.map(l => l.toUpperCase()).join(", ")}
+                          >
+                            {item.localesChanged.slice(0, 3).map((loc) => (
+                              <span key={loc} className="locale-tag">{loc}</span>
+                            ))}
+                            {item.localesChanged.length > 3 && (
+                              <span className="locale-tag locale-tag--more">
+                                +{item.localesChanged.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: "var(--color-border)" }}>—</span>
+                        )}
                       </td>
 
                       {/* Stage badge */}
@@ -520,8 +601,19 @@ export default function MainDashboard() {
                       {/* Previous stage badge */}
                       <td><StageBadge value={item.previousStage} /></td>
 
-                      {/* Environment */}
-                      <td>{item.updatedByNames?.join(", ") || "-"}</td>
+                      {/* User — truncated with tooltip showing full names on hover */}
+                      <td>
+                        {(item.updatedByNames || []).length > 0 ? (
+                          <div
+                            className="user-cell"
+                            title={item.updatedByNames.join(", ")}
+                          >
+                            {item.updatedByNames.join(", ")}
+                          </div>
+                        ) : (
+                          <span style={{ color: "var(--color-text-muted)" }}>—</span>
+                        )}
+                      </td>
 
                       {/* CMS link */}
                       <td>
