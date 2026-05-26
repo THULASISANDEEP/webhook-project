@@ -2,8 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-//TODO
-//import { getActorFromVersion } from "./services/datocmsService.js";
+import { getActorFromVersion } from "./services/datocmsService.js";
 
 dotenv.config();
 
@@ -11,13 +10,13 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 
-/* ================== DB ================== */
+/* ================== Connect DB ================== */
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
-  .catch(() => console.log("❌ DB Error"));
+  .catch((err) => console.log("❌ DB Error", err));
 
-/* ================== MODEL ================== */
-const payloadSchema = new mongoose.Schema({
+/* ================== Access MODEL ================== */
+const recordSchema = new mongoose.Schema({
   entityId: String,
   title: String,
   itemTypeId: String,
@@ -26,12 +25,6 @@ const payloadSchema = new mongoose.Schema({
   eventType: String,
   environment: String,
   cmsLink: String,
-
-  /* 🔥 NEW FIELD */
-  updatedBy: String,
-  //TODO
-  //updatedByEmail: String,
-  //updatedByRole: String,
 
   localesChanged: {
     type: [String],
@@ -49,17 +42,15 @@ const payloadSchema = new mongoose.Schema({
   }
 });
 
-const Payload = mongoose.model("Payload", payloadSchema);
+const Record = mongoose.model("Record", recordSchema);
 
-/* ================== WEBHOOK ================== */
+/* ================== WEBHOOK route ================== */
 app.post("/webhook", async (req, res) => {
   try {
     const data = req.body;
 
-    /* 🔥 ADD THIS */
     const entity = data.entity;
-    //TODO
-    //const versionId = data.entity?.meta?.current_version;
+    const versionId = data.entity?.meta?.current_version;
 
     const entityId = data.entity?.id;
     const itemTypeId =
@@ -72,11 +63,8 @@ app.post("/webhook", async (req, res) => {
     const cmsLink = `https://${projectId}.admin.datocms.com/environments/${environment}/editor/item_types/${itemTypeId}/items/${entityId}`;
 
 
-    //TODO
-    /* 🔥 ADD THIS (SAFE USER DETECTION) */
-    
-    /* 🔥 FETCH ACTOR INFO FROM VERSION */
-    /*const actor = versionId
+/* ================== Fetch actor ================== */
+    const actor = versionId
       ? await getActorFromVersion(versionId)
       : null;
 
@@ -84,10 +72,9 @@ app.post("/webhook", async (req, res) => {
     const updatedBy =
       actor?.userId ||
       entity?.relationships?.creator?.data?.id ||
-      "unknown";*/
-    //TODO
+      "unknown";
 
-    /* ================== 🔥 STRICT EN TITLE ================== */
+    // ================== STRICT EN_GB TITLE ==================
     const titleField = data.entity?.attributes?.title;
 
     let titleValue = "Untitled";
@@ -101,7 +88,7 @@ app.post("/webhook", async (req, res) => {
       titleValue = titleField.en.trim();
     }
 
-    /* ================== 🔥 CHANGE DETECTION ================== */
+    /* ================== DETECT CHANGES ================== */
     const currentAttributes = data.entity?.attributes || {};
     const previousAttributes = data.previous_entity?.attributes || {};
 
@@ -132,17 +119,17 @@ app.post("/webhook", async (req, res) => {
               if (!changesPerLocale[locale]) {
                 changesPerLocale[locale] = [];
               }
-              /* CHECK IF FIELD ALREADY EXISTS */
+              // CHECK IF FIELD ALREADY EXISTS
               const existingField = changesPerLocale[locale].find(
                 (item) => item.field === field
               );
 
-              /* UPDATE EXISTING FIELD */
+              // UPDATE EXISTING FIELD
               if (existingField) {
                 existingField.before = prevValue;
                 existingField.after = currValue;
               } else {
-                /* ADD NEW FIELD */
+                // ADD NEW FIELD
                 changesPerLocale[locale].push({
                   field,
                   before: prevValue,
@@ -168,7 +155,7 @@ app.post("/webhook", async (req, res) => {
 
     /* ================== SAVE ================== */
 
-  const existingRecord = await Payload.findOne({
+  const existingRecord = await Record.findOne({
     entityId,
     
   });
@@ -184,13 +171,13 @@ app.post("/webhook", async (req, res) => {
     cmsLink,
   
   };
-  /* 🔥 DO NOT UPDATE STAGE INFO WHEN CURRENT STAGE = DRAFT */
+  // DO NOT UPDATE STAGE INFO WHEN CURRENT STAGE = DRAFT
   if (currentStage !== "draft") {
     updateObject.stage = currentStage;
     updateObject.previousStage = previousStage;
   }
 
-  /* 🔥 UPDATE TIME ONLY WHEN MOVED TO REVIEW */
+  // UPDATE TIME ONLY WHEN MOVED TO REVIEW
   if (currentStage === "review") {
     updateObject.createdAt = new Date();
   } else {
@@ -198,25 +185,6 @@ app.post("/webhook", async (req, res) => {
       existingRecord?.createdAt || new Date();
   }
 
-
-
-
-
-
-
-
-//TODO
-      /* 🔥 ADD THIS */
-      //updatedBy
-
-      //updatedByEmail: actor?.email || null,
-      //updatedByRole: actor?.role || null,
-      //TODO
-      
-
-
-    /* 🔥 TODAY DATE KEY */
-    /* 🔥 MERGE OLD + NEW FIELD CHANGES */
 updateObject.localeChanges =
   existingRecord?.localeChanges || {};
 
@@ -236,19 +204,19 @@ Object.entries(changesPerLocale).forEach(
 
     changes.forEach((newChange) => {
 
-      /* FIND SAME FIELD */
+      // FIND SAME FIELD
       const existingField =
         updateObject.localeChanges[locale].find(
           (item) => item.field === newChange.field
         );
 
-      /* UPDATE EXISTING FIELD */
+      // UPDATE EXISTING FIELD
       if (existingField) {
         existingField.before = newChange.before;
         existingField.after = newChange.after;
       } else {
 
-        /* ADD NEW FIELD */
+        // ADD NEW FIELD
         updateObject.localeChanges[locale].push(newChange);
 
       }
@@ -257,7 +225,7 @@ Object.entries(changesPerLocale).forEach(
 });
     
 
-    await Payload.findOneAndUpdate(
+    await Record.findOneAndUpdate(
       {
         entityId
       },
@@ -270,7 +238,7 @@ Object.entries(changesPerLocale).forEach(
       { upsert: true, returnDocument: "after" }
     );
     //TODO
-    /*console.log(
+    console.log(
     "✅ Stored:",
     entityId,
     "| User:",
@@ -279,7 +247,7 @@ Object.entries(changesPerLocale).forEach(
     actor?.email,
     "| Role:",
     actor?.role
-  );*/
+  );
     //TODO
     res.status(200).json({ message: "Stored" });
 
@@ -290,9 +258,9 @@ Object.entries(changesPerLocale).forEach(
 });
 
 /* ================== GET ================== */
-app.get("/payloads", async (req, res) => {
+app.get("/records", async (req, res) => {
 
-  const data = await Payload.find({
+  const data = await Record.find({
     stage: {
       $in: ["review", "approved", "reject"]
     }
@@ -306,10 +274,10 @@ app.get("/payloads", async (req, res) => {
 });
 
 /* ================== DELETE ================== */
-app.delete("/payloads/:id", async (req, res) => {
-  await Payload.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
-});
+// app.delete("/records/:id", async (req, res) => {
+//   await Record.findByIdAndDelete(req.params.id);
+//   res.json({ success: true });
+// });
 
 /* ================== SERVER ================== */
 app.listen(4000, () => {
