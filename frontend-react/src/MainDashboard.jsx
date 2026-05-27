@@ -29,8 +29,13 @@ export const StageBadge = ({ value }) => {
    onHomeClick: callback for the Home button.
    recordCount: optional pill on the right.
 ───────────────────────────────────────────── */
-export const Navbar = ({ onHomeClick, recordCount }) => {
+export const Navbar = ({ onHomeClick, recordCount, environment }) => {
   const location = useLocation();
+
+  /* Capitalise first letter of environment string for display */
+  const envLabel = environment
+    ? environment.charAt(0).toUpperCase() + environment.slice(1).toLowerCase()
+    : null;
 
   return (
     <nav className="navbar">
@@ -62,8 +67,13 @@ export const Navbar = ({ onHomeClick, recordCount }) => {
             {recordCount} record{recordCount !== 1 ? "s" : ""}
           </span>
         )}
-        {/* Environment badge */}
-        <span className="navbar__env-badge">⚙ Development</span>
+
+        {/* Environment badge — only shown when data has an environment value */}
+        {envLabel && (
+          <span className="navbar__env-badge">
+            {envLabel}
+          </span>
+        )}
       </div>
     </nav>
   );
@@ -86,7 +96,7 @@ export default function MainDashboard() {
   const [showLocales, setShowLocales] = useState(false);      // locale dropdown open
   const [showStage, setShowStage] = useState(false);          // stage dropdown open
   const [showUsers, setShowUsers] = useState(false);          // user dropdown open
-  const [selectedUsers, setSelectedUsers] = useState([]);     // active user filters
+  const [selectedUsers, setSelectedUsers] = useState([]);     // active user filter
   const [currentPage, setCurrentPage] = useState(1);         // current page number
   const [rowsPerPage, setRowsPerPage] = useState(10);         // rows shown per page
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -131,13 +141,6 @@ export default function MainDashboard() {
       );
     }
 
-    /* User filter: row must include at least one selected user name */
-    if (selectedUsers.length > 0) {
-      filtered = filtered.filter((item) =>
-        selectedUsers.some((u) => (item.updatedByNames || []).includes(u))
-      );
-    }
-
     /* Stage filter */
     if (selectedStage) {
       filtered = filtered.filter((item) => item.stage === selectedStage);
@@ -154,6 +157,13 @@ export default function MainDashboard() {
     if (endDate) {
       filtered = filtered.filter(
         (item) => new Date(item.createdAt) <= new Date(endDate + "T23:59:59")
+      );
+    }
+
+    /* User filter: row must include at least one selected user */
+    if (selectedUsers.length > 0) {
+      filtered = filtered.filter((item) =>
+        selectedUsers.some((u) => (item.updatedByNames || []).includes(u))
       );
     }
 
@@ -200,7 +210,10 @@ export default function MainDashboard() {
   const allLocales = [...new Set(data.flatMap((item) => item.localesChanged || []))];
 
   /* ── Collect unique user names from all loaded records ── */
-  const allUsers = [...new Set(data.flatMap((item) => item.updatedByNames || []).filter(Boolean))];
+  const allUsers = [...new Set(data.flatMap((item) => item.updatedByNames || []))].filter(Boolean);
+
+  /* ── Extract environment from first record (same across all records) ── */
+  const environment = data[0]?.environment || null;
 
   /* ── Pagination ── */
   const totalPages   = Math.ceil(filteredData.length / rowsPerPage);
@@ -238,7 +251,7 @@ export default function MainDashboard() {
     <div className="page">
 
       {/* ── Shared navbar ── */}
-      <Navbar onHomeClick={resetFilters}  onadminClick={() => window.location.href = ".\MainDashboard.jsx"} recordCount={filteredData.length} />
+      <Navbar onHomeClick={resetFilters} onadminClick={() => window.location.href = ".\MainDashboard.jsx"} recordCount={filteredData.length} environment={environment} />
 
       {/* ── Page heading ── */}
       <div className="page-header">
@@ -387,7 +400,7 @@ export default function MainDashboard() {
           )}
         </div>
 
-        {/* ── User dropdown — same pattern as Locales ── */}
+        {/* ── User filter dropdown — same pattern as Locales ── */}
         <div style={{ position: "relative" }}>
           <button
             className={`filter-btn ${selectedUsers.length > 0 ? "filter-btn--active" : ""}`}
@@ -413,7 +426,6 @@ export default function MainDashboard() {
                     No users found
                   </div>
                 ) : (
-                  /* Max 4 visible, scroll the rest */
                   <div style={{ maxHeight: "calc(4 * 38px)", overflowY: "auto" }}>
                     {allUsers.map((user) => (
                       <label key={user} className="locale-dropdown__label">
@@ -574,25 +586,24 @@ export default function MainDashboard() {
                         </div>
                       </td>
 
-                      {/* Locale chips — truncated to fit column, full list on hover */}
+                      {/* Locale chips — capped width, tooltip shows all on hover */}
                       <td>
-                        {(item.localesChanged || []).length > 0 ? (
-                          <div
-                            className="locale-cell"
-                            title={item.localesChanged.map(l => l.toUpperCase()).join(", ")}
-                          >
-                            {item.localesChanged.slice(0, 3).map((loc) => (
-                              <span key={loc} className="locale-tag">{loc}</span>
-                            ))}
-                            {item.localesChanged.length > 3 && (
-                              <span className="locale-tag locale-tag--more">
-                                +{item.localesChanged.length - 3}
-                              </span>
-                            )}
+                        <div className="locales-cell">
+                          <div className="locales-cell__chips">
+                            {(item.localesChanged || []).length > 0
+                              ? item.localesChanged.map((loc) => (
+                                  <span key={loc} className="locale-tag">{loc}</span>
+                                ))
+                              : <span style={{ color: "var(--color-border)" }}>—</span>
+                            }
                           </div>
-                        ) : (
-                          <span style={{ color: "var(--color-border)" }}>—</span>
-                        )}
+                          {/* Tooltip listing all locales — appears on hover */}
+                          {(item.localesChanged || []).length > 0 && (
+                            <div className="locales-cell__tooltip">
+                              {item.localesChanged.join(" · ")}
+                            </div>
+                          )}
+                        </div>
                       </td>
 
                       {/* Stage badge */}
@@ -601,14 +612,18 @@ export default function MainDashboard() {
                       {/* Previous stage badge */}
                       <td><StageBadge value={item.previousStage} /></td>
 
-                      {/* User — truncated with tooltip showing full names on hover */}
+                      {/* User — truncated to fixed width, full names shown on hover */}
                       <td>
                         {(item.updatedByNames || []).length > 0 ? (
-                          <div
-                            className="user-cell"
-                            title={item.updatedByNames.join(", ")}
-                          >
-                            {item.updatedByNames.join(", ")}
+                          <div className="user-cell">
+                            <span className="user-cell__text">
+                              {item.updatedByNames.join(", ")}
+                            </span>
+                            <div className="user-cell__tooltip">
+                              {item.updatedByNames.map((name, i) => (
+                                <div key={i} className="user-cell__tooltip-name">{name}</div>
+                              ))}
+                            </div>
                           </div>
                         ) : (
                           <span style={{ color: "var(--color-text-muted)" }}>—</span>

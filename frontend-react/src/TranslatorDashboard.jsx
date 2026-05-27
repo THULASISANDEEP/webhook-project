@@ -19,7 +19,11 @@ export default function TranslatorDashboard() {
   const [currentPage, setCurrentPage] = useState(1);   // pagination
   const [rowsPerPage, setRowsPerPage] = useState(10);   // rows per page
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const [expanded, setExpanded] = useState(null); // expanded row _id for locale detail
+  const [expanded, setExpanded] = useState(null);               // expanded row _id for locale detail
+  const [selectedLocales, setSelectedLocales] = useState([]);   // locale filter
+  const [showLocales, setShowLocales] = useState(false);        // locale dropdown open
+  const [selectedUsers, setSelectedUsers] = useState([]);       // user filter
+  const [showUsers, setShowUsers] = useState(false);            // user dropdown open
 
   /* Refs for hidden date inputs — used to call .showPicker() on box click */
   const fromDateRef = useRef(null);
@@ -43,23 +47,33 @@ export default function TranslatorDashboard() {
     setSearch("");
     setFromDate("");
     setToDate("");
+    setSelectedLocales([]);
+    setSelectedUsers([]);
     setCurrentPage(1);
   };
 
   /* ── Apply search + date filters on the fly ── */
   const filteredData = data.filter((item) => {
-    /* Text search: title or entityId */
     const q = search.toLowerCase();
     const matchesSearch =
       item.title?.toLowerCase().includes(q) ||
       item.entityId?.toLowerCase().includes(q);
 
-    /* Date range */
     const itemDate    = new Date(item.createdAt);
     const matchesFrom = !fromDate || itemDate >= new Date(fromDate);
     const matchesTo   = !toDate   || itemDate <= new Date(toDate + "T23:59:59");
 
-    return matchesSearch && matchesFrom && matchesTo;
+    /* Locale filter */
+    const matchesLocale =
+      selectedLocales.length === 0 ||
+      selectedLocales.some((l) => item.localesChanged?.includes(l));
+
+    /* User filter */
+    const matchesUser =
+      selectedUsers.length === 0 ||
+      selectedUsers.some((u) => (item.updatedByNames || []).includes(u));
+
+    return matchesSearch && matchesFrom && matchesTo && matchesLocale && matchesUser;
   });
 
   /* ── Pagination ── */
@@ -87,7 +101,14 @@ export default function TranslatorDashboard() {
   });
 
   /* Show reset button only when a filter is active */
-  const hasActiveFilters = search || fromDate || toDate;
+  const hasActiveFilters = search || fromDate || toDate || selectedLocales.length > 0 || selectedUsers.length > 0;
+
+  /* Unique locales and users from rejected data */
+  const allLocales = [...new Set(data.flatMap((item) => item.localesChanged || []))];
+  const allUsers   = [...new Set(data.flatMap((item) => item.updatedByNames || []))].filter(Boolean);
+
+  /* Environment from first record */
+  const environment = data[0]?.environment || null;
 
   /* ── Safely extract display text from a DatoCMS field value ── */
   const getDisplayValue = (value) => {
@@ -114,7 +135,7 @@ export default function TranslatorDashboard() {
     <div className="page">
 
       {/* ── Shared navbar — Home resets filters here too ── */}
-      <Navbar onHomeClick={resetFilters} recordCount={filteredData.length} />
+      <Navbar onHomeClick={resetFilters} recordCount={filteredData.length} environment={environment} />
 
       {/* ── Page heading ── */}
       <div className="page-header">
@@ -175,6 +196,98 @@ export default function TranslatorDashboard() {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* ── Locales filter dropdown ── */}
+        <div style={{ position: "relative" }}>
+          <button
+            className={`filter-btn ${selectedLocales.length > 0 ? "filter-btn--active" : ""}`}
+            onClick={() => { setShowLocales((v) => !v); setShowUsers(false); }}
+          >
+            🌐 Locales
+            {selectedLocales.length > 0 && (
+              <span className="filter-btn__count">{selectedLocales.length}</span>
+            )}
+            <span style={{ opacity: 0.5, fontSize: "11px" }}>▼</span>
+          </button>
+          {showLocales && (
+            <>
+              <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setShowLocales(false)} />
+              <div className="locale-dropdown" style={{ zIndex: 100 }}>
+                <div className="locale-dropdown__heading">Filter by locale</div>
+                {allLocales.length === 0 ? (
+                  <div style={{ padding: "8px", color: "var(--color-text-muted)", fontSize: "13px" }}>No locales found</div>
+                ) : (
+                  <div style={{ maxHeight: "calc(4 * 38px)", overflowY: "auto" }}>
+                    {allLocales.map((locale) => (
+                      <label key={locale} className="locale-dropdown__label">
+                        <input
+                          type="checkbox"
+                          checked={selectedLocales.includes(locale)}
+                          style={{ accentColor: "var(--color-primary)" }}
+                          onChange={(e) =>
+                            setSelectedLocales(e.target.checked
+                              ? [...selectedLocales, locale]
+                              : selectedLocales.filter((l) => l !== locale))
+                          }
+                        />
+                        {locale.toUpperCase()}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {selectedLocales.length > 0 && (
+                  <button className="locale-dropdown__clear" onClick={() => setSelectedLocales([])}>Clear all</button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ── Users filter dropdown ── */}
+        <div style={{ position: "relative" }}>
+          <button
+            className={`filter-btn ${selectedUsers.length > 0 ? "filter-btn--active" : ""}`}
+            onClick={() => { setShowUsers((v) => !v); setShowLocales(false); }}
+          >
+            👤 Users
+            {selectedUsers.length > 0 && (
+              <span className="filter-btn__count">{selectedUsers.length}</span>
+            )}
+            <span style={{ opacity: 0.5, fontSize: "11px" }}>▼</span>
+          </button>
+          {showUsers && (
+            <>
+              <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setShowUsers(false)} />
+              <div className="locale-dropdown" style={{ zIndex: 100, minWidth: "200px" }}>
+                <div className="locale-dropdown__heading">Filter by user</div>
+                {allUsers.length === 0 ? (
+                  <div style={{ padding: "8px", color: "var(--color-text-muted)", fontSize: "13px" }}>No users found</div>
+                ) : (
+                  <div style={{ maxHeight: "calc(4 * 38px)", overflowY: "auto" }}>
+                    {allUsers.map((user) => (
+                      <label key={user} className="locale-dropdown__label">
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.includes(user)}
+                          style={{ accentColor: "var(--color-primary)" }}
+                          onChange={(e) =>
+                            setSelectedUsers(e.target.checked
+                              ? [...selectedUsers, user]
+                              : selectedUsers.filter((u) => u !== user))
+                          }
+                        />
+                        {user}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {selectedUsers.length > 0 && (
+                  <button className="locale-dropdown__clear" onClick={() => setSelectedUsers([])}>Clear all</button>
+                )}
+              </div>
+            </>
           )}
         </div>
 
@@ -311,23 +424,45 @@ export default function TranslatorDashboard() {
                         </div>
                       </td>
 
-                      {/* Locale chips */}
+                      {/* Locale chips — capped width, tooltip on hover */}
                       <td>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "3px", justifyContent: "center" }}>
-                          {(item.localesChanged || []).length > 0
-                            ? item.localesChanged.map((loc) => (
-                                <span key={loc} className="locale-tag">{loc}</span>
-                              ))
-                            : <span style={{ color: "var(--color-border)" }}>—</span>
-                          }
+                        <div className="locales-cell">
+                          <div className="locales-cell__chips">
+                            {(item.localesChanged || []).length > 0
+                              ? item.localesChanged.map((loc) => (
+                                  <span key={loc} className="locale-tag">{loc}</span>
+                                ))
+                              : <span style={{ color: "var(--color-border)" }}>—</span>
+                            }
+                          </div>
+                          {(item.localesChanged || []).length > 0 && (
+                            <div className="locales-cell__tooltip">
+                              {item.localesChanged.join(" · ")}
+                            </div>
+                          )}
                         </div>
                       </td>
 
-                      {/* Stage badge — always "reject" here but using shared badge for consistency */}
+                      {/* Stage badge */}
                       <td><StageBadge value={item.stage} /></td>
 
-                      {/* Environment */}
-                      <td>{item.updatedByNames?.join(", ") || "-"}</td>
+                      {/* User — truncated, full names on hover */}
+                      <td>
+                        {(item.updatedByNames || []).length > 0 ? (
+                          <div className="user-cell">
+                            <span className="user-cell__text">
+                              {item.updatedByNames.join(", ")}
+                            </span>
+                            <div className="user-cell__tooltip">
+                              {item.updatedByNames.map((name, i) => (
+                                <div key={i} className="user-cell__tooltip-name">{name}</div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ color: "var(--color-text-muted)" }}>—</span>
+                        )}
+                      </td>
 
                       {/* CMS link */}
                       <td>

@@ -710,3 +710,143 @@
   font-family: var(--font-base);
   white-space: nowrap;
 }
+/* ════════════════════
+   NAVBAR ENVIRONMENT BADGE
+   Shown on the right of the navbar next to record count.
+   Colour changes based on the environment value.
+════════════════════ */
+.navbar__env-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+/* ════════════════════
+   LOCALES CELL
+   Fixed max-width with overflow hidden + tooltip
+   revealing all locale chips on hover.
+════════════════════ */
+.locales-cell {
+  position: relative;
+  display: inline-block;    /* shrink-wraps to content */
+  max-width: 120px;         /* cap width so it doesn't stretch the column */
+}
+
+/* Chips row — clips after max-width */
+.locales-cell__chips {
+  display: flex;
+  flex-wrap: nowrap;        /* no wrap — clips instead */
+  gap: 3px;
+  overflow: hidden;
+  max-width: 120px;
+}
+
+/* Tooltip shown on hover — lists all locales as text */
+.locales-cell__tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1F2937;
+  color: #F9FAFB;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  z-index: 300;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Small arrow on tooltip */
+.locales-cell__tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: #1F2937;
+}
+
+.locales-cell:hover .locales-cell__tooltip {
+  display: block;
+}
+
+/* ════════════════════
+   USER CELL
+   Fixed max-width + text truncation with "..."
+   Full list of names shown in tooltip on hover.
+════════════════════ */
+.user-cell {
+  position: relative;
+  display: inline-block;
+  max-width: 180px;         /* cap so long names don't blow out the column */
+}
+
+/* The name text — truncates with ellipsis */
+.user-cell__text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+/* Tooltip panel — shown on hover */
+.user-cell__tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1F2937;
+  border-radius: 8px;
+  padding: 8px 12px;
+  z-index: 300;
+  min-width: 160px;
+  max-width: 280px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  pointer-events: none;
+}
+
+.user-cell__tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: #1F2937;
+}
+
+/* Each individual name inside the tooltip */
+.user-cell__tooltip-name {
+  font-size: 13px;
+  color: #F9FAFB;
+  font-weight: 500;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
+}
+
+.user-cell__tooltip-name:last-child {
+  border-bottom: none;
+}
+
+.user-cell:hover .user-cell__tooltip {
+  display: block;
+}
