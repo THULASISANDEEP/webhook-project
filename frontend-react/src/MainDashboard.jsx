@@ -184,8 +184,10 @@ const LocalesCell = ({ locales }) => {
 
 /* ─────────────────────────────────────────────
    USER CELL
-   Shows first name only. If multiple names,
-   appends "…" and shows all on hover.
+   Single user  → name only, no extra indicator.
+   Multiple users → name + small "⋯" dot-box so
+   it's immediately clear more names exist.
+   Hover shows tooltip with all names.
 ───────────────────────────────────────────── */
 const UserCell = ({ names }) => {
   if (!names || names.length === 0)
@@ -195,9 +197,15 @@ const UserCell = ({ names }) => {
 
   return (
     <div className="user-cell">
-      <span className="user-cell__text">
-        {names[0]}{hasMore ? "…" : ""}
-      </span>
+      {/* First name — truncated if too long */}
+      <span className="user-cell__text">{names[0]}</span>
+
+      {/* Dot-box — only shown when there are more names */}
+      {hasMore && (
+        <span className="user-cell__more-dot" title={`+${names.length - 1} more`}>⋯</span>
+      )}
+
+      {/* Tooltip lists all names — only rendered when hasMore */}
       {hasMore && (
         <div className="user-cell__tooltip">
           {names.map((name, i) => (
@@ -420,8 +428,7 @@ export default function MainDashboard() {
           <span className="date-box__icon">📅</span>
           <span className="date-box__label">{startDate ? new Date(startDate + "T00:00:00").toLocaleDateString() : "Start date"}</span>
           <input ref={startDateRef} type="date" value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+            onChange={(e) => setStartDate(e.target.value)} />
         </div>
 
         <span style={{ color: "var(--color-text-muted)", fontSize: "13px" }}>→</span>
@@ -430,8 +437,7 @@ export default function MainDashboard() {
           <span className="date-box__icon">📅</span>
           <span className="date-box__label">{endDate ? new Date(endDate + "T00:00:00").toLocaleDateString() : "End date"}</span>
           <input ref={endDateRef} type="date" value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+            onChange={(e) => setEndDate(e.target.value)} />
         </div>
 
         {hasActiveFilters && <button className="reset-btn" onClick={resetFilters}>✕ Reset</button>}

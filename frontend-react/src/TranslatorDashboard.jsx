@@ -102,7 +102,10 @@ const UserCell = ({ names }) => {
   const hasMore = names.length > 1;
   return (
     <div className="user-cell">
-      <span className="user-cell__text">{names[0]}{hasMore ? "…" : ""}</span>
+      <span className="user-cell__text">{names[0]}</span>
+      {hasMore && (
+        <span className="user-cell__more-dot" title={`+${names.length - 1} more`}>⋯</span>
+      )}
       {hasMore && (
         <div className="user-cell__tooltip">
           {names.map((name, i) => <div key={i} className="user-cell__tooltip-name">{name}</div>)}
@@ -265,16 +268,14 @@ export default function TranslatorDashboard() {
           <span className="date-box__icon">📅</span>
           <span className="date-box__label">{fromDate ? new Date(fromDate + "T00:00:00").toLocaleDateString() : "Start date"}</span>
           <input ref={fromDateRef} type="date" value={fromDate}
-            onChange={(e) => { setFromDate(e.target.value); setCurrentPage(1); }}
-            style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+            onChange={(e) => { setFromDate(e.target.value); setCurrentPage(1); }} />
         </div>
         <span style={{ color: "var(--color-text-muted)", fontSize: "13px" }}>→</span>
         <div className="date-box" onClick={() => toDateRef.current?.showPicker()} title="End date">
           <span className="date-box__icon">📅</span>
           <span className="date-box__label">{toDate ? new Date(toDate + "T00:00:00").toLocaleDateString() : "End date"}</span>
           <input ref={toDateRef} type="date" value={toDate}
-            onChange={(e) => { setToDate(e.target.value); setCurrentPage(1); }}
-            style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+            onChange={(e) => { setToDate(e.target.value); setCurrentPage(1); }} />
         </div>
 
         {hasActiveFilters && <button className="reset-btn" onClick={resetFilters}>✕ Reset</button>}
