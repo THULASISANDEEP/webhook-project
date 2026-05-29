@@ -3,36 +3,19 @@ import { Link, useLocation } from "react-router-dom";
 import "./App.css";
 
 /* ─────────────────────────────────────────────
-   STAGE BADGE
-   Renders a coloured pill based on stage value.
-   Exported so TranslatorDashboard can reuse it.
+   STAGE BADGE — coloured pill for stage values
 ───────────────────────────────────────────── */
 export const StageBadge = ({ value }) => {
   if (!value) return <span className="badge badge--neutral">—</span>;
-
-  const cls = {
-    review:   "badge badge--review",
-    approved: "badge badge--approved",
-    reject:   "badge badge--reject",
-  };
-
-  return (
-    <span className={cls[value.toLowerCase()] || "badge badge--neutral"}>
-      {value}
-    </span>
-  );
+  const cls = { review: "badge badge--review", approved: "badge badge--approved", reject: "badge badge--reject" };
+  return <span className={cls[value.toLowerCase()] || "badge badge--neutral"}>{value}</span>;
 };
 
 /* ─────────────────────────────────────────────
    SHARED NAVBAR
-   Sticky top bar used on both pages.
-   onHomeClick: callback for the Home button.
-   recordCount: optional pill on the right.
 ───────────────────────────────────────────── */
 export const Navbar = ({ onHomeClick, recordCount, environment }) => {
   const location = useLocation();
-
-  /* Capitalise first letter of environment string for display */
   const envLabel = environment
     ? environment.charAt(0).toUpperCase() + environment.slice(1).toLowerCase()
     : null;
@@ -41,217 +24,332 @@ export const Navbar = ({ onHomeClick, recordCount, environment }) => {
     <nav className="navbar">
       <div className="navbar__left">
         <span className="navbar__brand">⚡ WebhookCMS</span>
-
-        {/* Admin — navigates to the main dashboard (/) */}
-        <Link
-          to="/"
-          onClick={onHomeClick}
-          className={`navbar__link ${location.pathname === "/" ? "navbar__link--active" : ""}`}
-        >
+        <Link to="/" onClick={onHomeClick}
+          className={`navbar__link ${location.pathname === "/" ? "navbar__link--active" : ""}`}>
           Admin
         </Link>
-
-        {/* Translator page link */}
-        <Link
-          to="/translator"
-          className={`navbar__link ${location.pathname === "/translator" ? "navbar__link--active" : ""}`}
-        >
+        <Link to="/translator"
+          className={`navbar__link ${location.pathname === "/translator" ? "navbar__link--active" : ""}`}>
           Translator
         </Link>
       </div>
-
       <div className="navbar__right">
-        {/* Record count pill */}
         {recordCount !== undefined && (
-          <span className="navbar__count">
-            {recordCount} record{recordCount !== 1 ? "s" : ""}
-          </span>
+          <span className="navbar__count">{recordCount} record{recordCount !== 1 ? "s" : ""}</span>
         )}
-
-        {/* Environment badge — only shown when data has an environment value */}
-        {envLabel && (
-          <span className="navbar__env-badge">
-            {envLabel}
-          </span>
-        )}
+        {envLabel && <span className="navbar__env-badge">{envLabel}</span>}
       </div>
     </nav>
   );
 };
 
+/* ─────────────────────────────────────────────
+   REUSABLE FILTER DROPDOWN
+   Used for Locales, Stage, and Users.
+   Props:
+     label       — button text when nothing selected
+     icon        — emoji prefix
+     selected    — array (locales/users) or string (stage)
+     isMulti     — true = checkboxes, false = single-select
+     options     — array of { value, label, count }
+     onToggle    — (value) => void
+     onClear     — () => void
+     show        — boolean
+     onOpen      — () => void
+     onClose     — () => void
+───────────────────────────────────────────── */
+const FilterDropdown = ({
+  label, icon, selected, isMulti,
+  options, onToggle, onClear,
+  show, onOpen, onClose,
+  minWidth = "160px",
+  heading,
+}) => {
+  /* Count of active selections */
+  const activeCount = isMulti ? selected.length : (selected ? 1 : 0);
+
+  /* Label shown on the trigger button */
+  const btnLabel = isMulti
+    ? label
+    : (selected ? selected.charAt(0).toUpperCase() + selected.slice(1) : label);
+
+  return (
+    <div style={{ position: "relative" }}>
+      {/* Trigger button */}
+      <button
+        className={`filter-btn ${activeCount > 0 ? "filter-btn--active" : ""}`}
+        onClick={() => show ? onClose() : onOpen()}
+      >
+        {icon && <span>{icon}</span>}
+        {btnLabel}
+        {isMulti && activeCount > 0 && (
+          <span className="filter-btn__count">{activeCount}</span>
+        )}
+        <span style={{ opacity: 0.5, fontSize: "11px" }}>▼</span>
+      </button>
+
+      {show && (
+        <>
+          {/* Click-away backdrop */}
+          <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={onClose} />
+
+          <div className="locale-dropdown" style={{ zIndex: 100, minWidth }}>
+            <div className="locale-dropdown__heading">{heading}</div>
+
+            {options.length === 0 ? (
+              <div style={{ padding: "8px", color: "var(--color-text-muted)", fontSize: "13px" }}>
+                No options found
+              </div>
+            ) : (
+              /* Scrollable list — max 4 items visible */
+              <div style={{ maxHeight: "calc(4 * 38px)", overflowY: "auto" }}>
+                {options.map((opt) => (
+                  isMulti ? (
+                    /* Multi-select: checkbox row */
+                    <label key={opt.value} className="locale-dropdown__label">
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(opt.value)}
+                        style={{ accentColor: "var(--color-primary)" }}
+                        onChange={() => onToggle(opt.value)}
+                      />
+                      <span style={{ flex: 1 }}>{opt.label}</span>
+                      {/* Count badge on the right */}
+                      <span className="filter-option-count">{opt.count}</span>
+                    </label>
+                  ) : (
+                    /* Single-select: clickable row */
+                    <div
+                      key={opt.value}
+                      className="locale-dropdown__label"
+                      style={{
+                        cursor: "pointer",
+                        fontWeight: selected === opt.value ? 600 : 400,
+                        color: selected === opt.value ? "var(--color-primary)" : "var(--color-text-secondary)",
+                        background: selected === opt.value ? "var(--color-primary-light)" : "transparent",
+                        borderRadius: "var(--radius-sm)",
+                      }}
+                      onClick={() => { onToggle(opt.value); onClose(); }}
+                    >
+                      <span style={{ flex: 1 }}>{opt.label}</span>
+                      <span className="filter-option-count">{opt.count}</span>
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+
+            {/* Clear all — multi only */}
+            {isMulti && selected.length > 0 && (
+              <button className="locale-dropdown__clear" onClick={onClear}>Clear all</button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 /* ─────────────────────────────────────────────
-   MAIN DASHBOARD COMPONENT
+   LOCALES CELL
+   Shows first 3 chips. If more, shows "…" and
+   a tooltip with all locales on hover.
+───────────────────────────────────────────── */
+const LocalesCell = ({ locales }) => {
+  if (!locales || locales.length === 0)
+    return <span style={{ color: "var(--color-border)" }}>—</span>;
+
+  const visible  = locales.slice(0, 3);
+  const hasMore  = locales.length > 3;
+
+  return (
+    <div className="locales-cell">
+      <div className="locales-cell__chips">
+        {visible.map((loc) => (
+          <span key={loc} className="locale-tag">{loc}</span>
+        ))}
+        {hasMore && <span className="locale-tag locale-tag--more">…</span>}
+      </div>
+      {/* Tooltip only when there are more than 3 */}
+      {hasMore && (
+        <div className="locales-cell__tooltip">
+          {locales.map((loc) => (
+            <span key={loc} className="locales-cell__tooltip-chip">{loc}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   USER CELL
+   Shows first name only. If multiple names,
+   appends "…" and shows all on hover.
+───────────────────────────────────────────── */
+const UserCell = ({ names }) => {
+  if (!names || names.length === 0)
+    return <span style={{ color: "var(--color-text-muted)" }}>—</span>;
+
+  const hasMore = names.length > 1;
+
+  return (
+    <div className="user-cell">
+      <span className="user-cell__text">
+        {names[0]}{hasMore ? "…" : ""}
+      </span>
+      {hasMore && (
+        <div className="user-cell__tooltip">
+          {names.map((name, i) => (
+            <div key={i} className="user-cell__tooltip-name">{name}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   MAIN DASHBOARD
 ───────────────────────────────────────────── */
 export default function MainDashboard() {
-  /* ── State ── */
-  const [data, setData] = useState([]);                       // raw API payload
-  const [filteredData, setFilteredData] = useState([]);       // post-filter rows
-  const [selectedLocales, setSelectedLocales] = useState([]); // active locale checkboxes
-  const [selectedStage, setSelectedStage] = useState("");     // active stage filter
-  const [startDate, setStartDate] = useState("");             // date range: from
-  const [endDate, setEndDate] = useState("");                 // date range: to
-  const [search, setSearch] = useState("");                   // search query
-  const [expanded, setExpanded] = useState(null);             // _id of expanded row
-  const [showLocales, setShowLocales] = useState(false);      // locale dropdown open
-  const [showStage, setShowStage] = useState(false);          // stage dropdown open
-  const [showUsers, setShowUsers] = useState(false);          // user dropdown open
-  const [selectedUsers, setSelectedUsers] = useState([]);     // active user filter
-  const [currentPage, setCurrentPage] = useState(1);         // current page number
-  const [rowsPerPage, setRowsPerPage] = useState(10);         // rows shown per page
+  const [data,           setData]           = useState([]);
+  const [filteredData,   setFilteredData]   = useState([]);
+  const [selectedLocales,setSelectedLocales]= useState([]);
+  const [selectedStage,  setSelectedStage]  = useState("");
+  const [startDate,      setStartDate]      = useState("");
+  const [endDate,        setEndDate]        = useState("");
+  const [search,         setSearch]         = useState("");
+  const [expanded,       setExpanded]       = useState(null);
+  const [showLocales,    setShowLocales]    = useState(false);
+  const [showStage,      setShowStage]      = useState(false);
+  const [showUsers,      setShowUsers]      = useState(false);
+  const [selectedUsers,  setSelectedUsers]  = useState([]);
+  const [currentPage,    setCurrentPage]    = useState(1);
+  const [rowsPerPage,    setRowsPerPage]    = useState(10);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
-  /* Refs for hidden date inputs — used to call .showPicker() on box click */
   const startDateRef = useRef(null);
   const endDateRef   = useRef(null);
 
-  /* ── Load all payloads (review / approved / reject) on mount ── */
+  /* ── Fetch ── */
   const fetchData = async () => {
-    const res = await fetch("http://localhost:4000/records");
+    const res  = await fetch("http://localhost:4000/records");
     const json = await res.json();
     setData(json.data || []);
     setFilteredData(json.data || []);
   };
-
   useEffect(() => { fetchData(); }, []);
 
-  /* Re-apply filters whenever any filter value or the base data changes */
+  /* ── Re-filter on any change ── */
   useEffect(() => { applyFilters(); }, [
     search, selectedLocales, selectedStage, selectedUsers, startDate, endDate, data,
   ]);
 
-  /* ── Filter logic — runs against raw `data` each time ── */
   const applyFilters = () => {
-    let filtered = [...data];
-
-    /* Text search: title or entityId */
+    let f = [...data];
     if (search.trim()) {
       const q = search.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.title?.toLowerCase().includes(q) ||
-          item.entityId?.toLowerCase().includes(q)
-      );
+      f = f.filter((i) => i.title?.toLowerCase().includes(q) || i.entityId?.toLowerCase().includes(q));
     }
-
-    /* Locale filter: row must include at least one selected locale */
-    if (selectedLocales.length > 0) {
-      filtered = filtered.filter((item) =>
-        selectedLocales.some((l) => item.localesChanged?.includes(l))
-      );
-    }
-
-    /* Stage filter */
-    if (selectedStage) {
-      filtered = filtered.filter((item) => item.stage === selectedStage);
-    }
-
-    /* Date range — start (inclusive) */
-    if (startDate) {
-      filtered = filtered.filter(
-        (item) => new Date(item.createdAt) >= new Date(startDate)
-      );
-    }
-
-    /* Date range — end (inclusive through end of day) */
-    if (endDate) {
-      filtered = filtered.filter(
-        (item) => new Date(item.createdAt) <= new Date(endDate + "T23:59:59")
-      );
-    }
-
-    /* User filter: row must include at least one selected user */
-    if (selectedUsers.length > 0) {
-      filtered = filtered.filter((item) =>
-        selectedUsers.some((u) => (item.updatedByNames || []).includes(u))
-      );
-    }
-
-    setFilteredData(filtered);
-    setCurrentPage(1); // always jump back to page 1 on filter change
-  };
-
-  /* ── Delete a record and refresh the list ── */
-  /*i have removed the delete button*/
-
-
-  /* ── Reset every filter and restore full dataset ── */
-  const resetFilters = () => {
-    setSearch("");
-    setSelectedLocales([]);
-    setSelectedStage("");
-    setSelectedUsers([]);
-    setStartDate("");
-    setEndDate("");
+    if (selectedLocales.length > 0)
+      f = f.filter((i) => selectedLocales.some((l) => i.localesChanged?.includes(l)));
+    if (selectedStage)
+      f = f.filter((i) => i.stage === selectedStage);
+    if (startDate)
+      f = f.filter((i) => new Date(i.createdAt) >= new Date(startDate));
+    if (endDate)
+      f = f.filter((i) => new Date(i.createdAt) <= new Date(endDate + "T23:59:59"));
+    if (selectedUsers.length > 0)
+      f = f.filter((i) => selectedUsers.some((u) => (i.updatedByNames || []).includes(u)));
+    setFilteredData(f);
     setCurrentPage(1);
-    setFilteredData(data);
   };
 
-  /* ── Safely extract display text from any DatoCMS field value ── */
+  const resetFilters = () => {
+    setSearch(""); setSelectedLocales([]); setSelectedStage("");
+    setSelectedUsers([]); setStartDate(""); setEndDate("");
+    setCurrentPage(1); setFilteredData(data);
+  };
+
   const getDisplayValue = (value) => {
     if (!value) return "-";
     if (typeof value === "string") return value;
-
-    /* DatoCMS structured text: walk the document tree */
     if (typeof value === "object" && value.document?.children) {
       try {
         return value.document.children
-          .map((child) => child.children?.map((c) => c.value || "").join(""))
-          .join(" ");
-      } catch {
-        return "[Structured Text]";
-      }
+          .map((child) => child.children?.map((c) => c.value || "").join("")).join(" ");
+      } catch { return "[Structured Text]"; }
     }
-
     return JSON.stringify(value);
   };
 
-  /* ── Collect unique locales from all loaded records ── */
-  const allLocales = [...new Set(data.flatMap((item) => item.localesChanged || []))];
-
-  /* ── Collect unique user names from all loaded records ── */
-  const allUsers = [...new Set(data.flatMap((item) => item.updatedByNames || []))].filter(Boolean);
-
-  /* ── Extract environment from first record (same across all records) ── */
+  /* ── Derived option lists with counts ── */
+  const allLocales = [...new Set(data.flatMap((i) => i.localesChanged || []))];
+  const allUsers   = [...new Set(data.flatMap((i) => i.updatedByNames  || []))].filter(Boolean);
   const environment = data[0]?.environment || null;
 
-  /* ── Pagination ── */
-  const totalPages   = Math.ceil(filteredData.length / rowsPerPage);
-  const indexOfLast  = currentPage * rowsPerPage;
-  const currentRows  = filteredData.slice(indexOfLast - rowsPerPage, indexOfLast);
+  /* Count how many records in `data` contain each locale/user/stage */
+  const localeOptions = allLocales.map((loc) => ({
+    value: loc,
+    label: loc.toUpperCase(),
+    count: data.filter((i) => i.localesChanged?.includes(loc)).length,
+  }));
 
-  /* Page numbers: up to 5 centred on currentPage */
+  const stageOptions = ["", "review", "approved", "reject"].map((s) => ({
+    value: s,
+    label: s === "" ? "All Stages" : s.charAt(0).toUpperCase() + s.slice(1),
+    count: s === "" ? data.length : data.filter((i) => i.stage === s).length,
+  }));
+
+  const userOptions = allUsers.map((u) => ({
+    value: u,
+    label: u,
+    count: data.filter((i) => (i.updatedByNames || []).includes(u)).length,
+  }));
+
+  /* ── Pagination ── */
+  const totalPages  = Math.ceil(filteredData.length / rowsPerPage);
+  const indexOfLast = currentPage * rowsPerPage;
+  const currentRows = filteredData.slice(indexOfLast - rowsPerPage, indexOfLast);
   const getPageNumbers = () => {
     const pages = [];
-    for (
-      let i = Math.max(1, currentPage - 2);
-      i <= Math.min(totalPages, currentPage + 2);
-      i++
-    ) pages.push(i);
+    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++)
+      pages.push(i);
     return pages;
   };
 
-  /* Live search suggestions */
-  const searchSuggestions = data.filter((item) => {
+  const searchSuggestions = data.filter((i) => {
     const q = search.toLowerCase();
-    return (
-      item.title?.toLowerCase().includes(q) ||
-      item.entityId?.toLowerCase().includes(q)
-    );
+    return i.title?.toLowerCase().includes(q) || i.entityId?.toLowerCase().includes(q);
   });
 
-  /* Show reset button only when something is active */
-  const hasActiveFilters =
-    search || selectedLocales.length > 0 || selectedStage || selectedUsers.length > 0 || startDate || endDate;
+  const hasActiveFilters = search || selectedLocales.length > 0 || selectedStage ||
+    selectedUsers.length > 0 || startDate || endDate;
 
-  /* ═══════════════════════════════════════════
-     RENDER
-  ═══════════════════════════════════════════ */
+  /* ── Helpers to close other dropdowns when one opens ── */
+  const openLocales = () => { setShowLocales(true);  setShowStage(false); setShowUsers(false); };
+  const openStage   = () => { setShowStage(true);    setShowLocales(false); setShowUsers(false); };
+  const openUsers   = () => { setShowUsers(true);    setShowLocales(false); setShowStage(false); };
+
+  /* ═══════════════════════════════════════ RENDER ══════════════════════════════════════ */
   return (
-    <div className="page">
+    /*
+      Layout:
+        .page-outer  — full viewport height, flex-column, no overflow
+          navbar     — fixed height, sticky
+          page-header— fixed height
+          toolbar    — fixed height
+          .page-inner — flex:1, overflow hidden, flex-column
+            card__header — fixed
+            table-head   — fixed (sticky thead)
+            table-body   — flex:1, overflowY scroll
+            pagination   — fixed
+    */
+    <div className="page-outer">
 
-      {/* ── Shared navbar ── */}
-      <Navbar onHomeClick={resetFilters} onadminClick={() => window.location.href = ".\MainDashboard.jsx"} recordCount={filteredData.length} environment={environment} />
+      {/* ── Navbar (sticky) ── */}
+      <Navbar onHomeClick={resetFilters} recordCount={filteredData.length} environment={environment} />
 
       {/* ── Page heading ── */}
       <div className="page-header">
@@ -262,36 +360,22 @@ export default function MainDashboard() {
       {/* ── Filters toolbar ── */}
       <div className="toolbar">
 
-        {/* Search field + live suggestion dropdown */}
+        {/* Search */}
         <div style={{ position: "relative" }}>
           <div className="search-wrapper">
             <span className="search-wrapper__icon">🔍</span>
-            <input
-              type="text"
-              placeholder="Search title or record ID…"
-              value={search}
+            <input type="text" placeholder="Search title or record ID…" value={search}
               className="search-wrapper__input"
               onChange={(e) => { setSearch(e.target.value); setShowSearchDropdown(true); }}
               onFocus={() => setShowSearchDropdown(true)}
-              onBlur={() => setTimeout(() => setShowSearchDropdown(false), 150)}
-            />
-            {search && (
-              <button className="search-wrapper__clear" onClick={() => setSearch("")}>✕</button>
-            )}
+              onBlur={() => setTimeout(() => setShowSearchDropdown(false), 150)} />
+            {search && <button className="search-wrapper__clear" onClick={() => setSearch("")}>✕</button>}
           </div>
-
           {showSearchDropdown && search.trim() && searchSuggestions.length > 0 && (
             <div className="suggestions-box">
               {searchSuggestions.slice(0, 6).map((item) => (
-                <div
-                  key={item._id}
-                  className="suggestions-box__item"
-                  onMouseDown={() => {
-                    setSearch(item.title);
-                    setFilteredData([item]);
-                    setShowSearchDropdown(false);
-                  }}
-                >
+                <div key={item._id} className="suggestions-box__item"
+                  onMouseDown={() => { setSearch(item.title); setFilteredData([item]); setShowSearchDropdown(false); }}>
                   <div className="suggestions-box__title">{item.title}</div>
                   <div className="suggestions-box__id">{item.entityId}</div>
                 </div>
@@ -300,412 +384,202 @@ export default function MainDashboard() {
           )}
         </div>
 
-        {/* ── Locales dropdown — click to open/close, scrollable if >4 locales ── */}
-        <div style={{ position: "relative" }}>
-          <button
-            className={`filter-btn ${selectedLocales.length > 0 ? "filter-btn--active" : ""}`}
-            onClick={() => { setShowLocales((v) => !v); setShowStage(false); }}
-          >
-            🌐 Locales
-            {selectedLocales.length > 0 && (
-              <span className="filter-btn__count">{selectedLocales.length}</span>
-            )}
-            <span style={{ opacity: 0.5, fontSize: "11px" }}>▼</span>
-          </button>
+        {/* Locales filter */}
+        <FilterDropdown
+          label="Locales" icon="🌐" isMulti heading="Filter by locale"
+          options={localeOptions} selected={selectedLocales}
+          onToggle={(v) => setSelectedLocales((prev) =>
+            prev.includes(v) ? prev.filter((l) => l !== v) : [...prev, v])}
+          onClear={() => setSelectedLocales([])}
+          show={showLocales} onOpen={openLocales} onClose={() => setShowLocales(false)}
+        />
 
-          {showLocales && (
-            /* Close when clicking outside */
-            <>
-              <div
-                style={{ position: "fixed", inset: 0, zIndex: 99 }}
-                onClick={() => setShowLocales(false)}
-              />
-              <div className="locale-dropdown" style={{ zIndex: 100 }}>
-                <div className="locale-dropdown__heading">Filter by locale</div>
-                {allLocales.length === 0 ? (
-                  <div style={{ padding: "8px", color: "var(--color-text-muted)", fontSize: "13px" }}>
-                    No locales found
-                  </div>
-                ) : (
-                  /* Show max 4 items, scroll the rest */
-                  <div style={{ maxHeight: "calc(4 * 38px)", overflowY: "auto" }}>
-                    {allLocales.map((locale) => (
-                      <label key={locale} className="locale-dropdown__label">
-                        <input
-                          type="checkbox"
-                          checked={selectedLocales.includes(locale)}
-                          style={{ accentColor: "var(--color-primary)" }}
-                          onChange={(e) =>
-                            setSelectedLocales(
-                              e.target.checked
-                                ? [...selectedLocales, locale]
-                                : selectedLocales.filter((l) => l !== locale)
-                            )
-                          }
-                        />
-                        {locale.toUpperCase()}
-                      </label>
-                    ))}
-                  </div>
-                )}
-                {selectedLocales.length > 0 && (
-                  <button className="locale-dropdown__clear" onClick={() => setSelectedLocales([])}>
-                    Clear all
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+        {/* Stage filter */}
+        <FilterDropdown
+          label="All Stages" isMulti={false} heading="Filter by stage"
+          options={stageOptions} selected={selectedStage}
+          onToggle={(v) => setSelectedStage(v)}
+          onClear={() => setSelectedStage("")}
+          show={showStage} onOpen={openStage} onClose={() => setShowStage(false)}
+          minWidth="180px"
+        />
 
-        {/* ── Stage dropdown — same click-to-open style as Locales ── */}
-        <div style={{ position: "relative" }}>
-          <button
-            className={`filter-btn ${selectedStage ? "filter-btn--active" : ""}`}
-            onClick={() => { setShowStage((v) => !v); setShowLocales(false); }}
-          >
-            {selectedStage
-              ? selectedStage.charAt(0).toUpperCase() + selectedStage.slice(1)
-              : "All Stages"}
-            <span style={{ opacity: 0.5, fontSize: "11px" }}>▼</span>
-          </button>
+        {/* Users filter */}
+        <FilterDropdown
+          label="Users" icon="👤" isMulti heading="Filter by user"
+          options={userOptions} selected={selectedUsers}
+          onToggle={(v) => setSelectedUsers((prev) =>
+            prev.includes(v) ? prev.filter((u) => u !== v) : [...prev, v])}
+          onClear={() => setSelectedUsers([])}
+          show={showUsers} onOpen={openUsers} onClose={() => setShowUsers(false)}
+          minWidth="220px"
+        />
 
-          {showStage && (
-            <>
-              {/* Click-away backdrop */}
-              <div
-                style={{ position: "fixed", inset: 0, zIndex: 99 }}
-                onClick={() => setShowStage(false)}
-              />
-              <div className="locale-dropdown" style={{ zIndex: 100, minWidth: "140px" }}>
-                <div className="locale-dropdown__heading">Filter by stage</div>
-                {["", "review", "approved", "reject"].map((stage) => (
-                  <div
-                    key={stage}
-                    className="locale-dropdown__label"
-                    style={{
-                      cursor: "pointer",
-                      fontWeight: selectedStage === stage ? 600 : 400,
-                      color: selectedStage === stage ? "var(--color-primary)" : "var(--color-text-secondary)",
-                      background: selectedStage === stage ? "var(--color-primary-light)" : "transparent",
-                      borderRadius: "var(--radius-sm)",
-                    }}
-                    onClick={() => { setSelectedStage(stage); setShowStage(false); }}
-                  >
-                    {stage === "" ? "All Stages" : stage.charAt(0).toUpperCase() + stage.slice(1)}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* ── User filter dropdown — same pattern as Locales ── */}
-        <div style={{ position: "relative" }}>
-          <button
-            className={`filter-btn ${selectedUsers.length > 0 ? "filter-btn--active" : ""}`}
-            onClick={() => { setShowUsers((v) => !v); setShowLocales(false); setShowStage(false); }}
-          >
-            👤 Users
-            {selectedUsers.length > 0 && (
-              <span className="filter-btn__count">{selectedUsers.length}</span>
-            )}
-            <span style={{ opacity: 0.5, fontSize: "11px" }}>▼</span>
-          </button>
-
-          {showUsers && (
-            <>
-              <div
-                style={{ position: "fixed", inset: 0, zIndex: 99 }}
-                onClick={() => setShowUsers(false)}
-              />
-              <div className="locale-dropdown" style={{ zIndex: 100, minWidth: "200px" }}>
-                <div className="locale-dropdown__heading">Filter by user</div>
-                {allUsers.length === 0 ? (
-                  <div style={{ padding: "8px", color: "var(--color-text-muted)", fontSize: "13px" }}>
-                    No users found
-                  </div>
-                ) : (
-                  <div style={{ maxHeight: "calc(4 * 38px)", overflowY: "auto" }}>
-                    {allUsers.map((user) => (
-                      <label key={user} className="locale-dropdown__label">
-                        <input
-                          type="checkbox"
-                          checked={selectedUsers.includes(user)}
-                          style={{ accentColor: "var(--color-primary)" }}
-                          onChange={(e) =>
-                            setSelectedUsers(
-                              e.target.checked
-                                ? [...selectedUsers, user]
-                                : selectedUsers.filter((u) => u !== user)
-                            )
-                          }
-                        />
-                        {user}
-                      </label>
-                    ))}
-                  </div>
-                )}
-                {selectedUsers.length > 0 && (
-                  <button className="locale-dropdown__clear" onClick={() => setSelectedUsers([])}>
-                    Clear all
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* ── Date range pickers ──
-            The native <input type="date"> is hidden (opacity 0, zero size).
-            Clicking anywhere on the styled box calls .showPicker() on the
-            hidden input, so the calendar opens without any "dd-mm-yyyy"
-            placeholder text ever being visible.
-        ── */}
-        <div
-          className="date-box"
-          onClick={() => startDateRef.current?.showPicker()}
-          title="From date"
-        >
+        {/* Date range — hidden native inputs, styled boxes */}
+        <div className="date-box" onClick={() => startDateRef.current?.showPicker()} title="From date">
           <span className="date-box__icon">📅</span>
-          <span className="date-box__label">
-            {startDate
-              ? new Date(startDate + "T00:00:00").toLocaleDateString()
-              : "Start date"}
-          </span>
-          {/* Hidden native input — positioned off-screen so it takes no space */}
-          <input
-            ref={startDateRef}
-            type="date"
-            value={startDate}
+          <span className="date-box__label">{startDate ? new Date(startDate + "T00:00:00").toLocaleDateString() : "Start date"}</span>
+          <input ref={startDateRef} type="date" value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            style={{
-              position: "absolute",
-              opacity: 0,
-              width: 0,
-              height: 0,
-              pointerEvents: "none",
-            }}
-          />
+            style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
         </div>
 
         <span style={{ color: "var(--color-text-muted)", fontSize: "13px" }}>→</span>
 
-        <div
-          className="date-box"
-          onClick={() => endDateRef.current?.showPicker()}
-          title="End date"
-        >
+        <div className="date-box" onClick={() => endDateRef.current?.showPicker()} title="End date">
           <span className="date-box__icon">📅</span>
-          <span className="date-box__label">
-            {endDate
-              ? new Date(endDate + "T00:00:00").toLocaleDateString()
-              : "End date"}
-          </span>
-          <input
-            ref={endDateRef}
-            type="date"
-            value={endDate}
+          <span className="date-box__label">{endDate ? new Date(endDate + "T00:00:00").toLocaleDateString() : "End date"}</span>
+          <input ref={endDateRef} type="date" value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            style={{
-              position: "absolute",
-              opacity: 0,
-              width: 0,
-              height: 0,
-              pointerEvents: "none",
-            }}
-          />
+            style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
         </div>
 
-        {/* Reset button — visible only when filters are active */}
-        {hasActiveFilters && (
-          <button className="reset-btn" onClick={resetFilters}>✕ Reset</button>
-        )}
+        {hasActiveFilters && <button className="reset-btn" onClick={resetFilters}>✕ Reset</button>}
       </div>
 
-      {/* ── Table card ── */}
-      <div className="card">
+      {/* ── Table area (fills remaining height, scrolls only tbody) ── */}
+      <div className="page-inner">
+        <div className="card-inner">
 
-        {/* Card header: count + rows-per-page */}
-        <div className="card__header">
-          <span className="card__entry-count">
-            Showing <strong>{Math.min(indexOfLast, filteredData.length)}</strong> of{" "}
-            <strong>{filteredData.length}</strong> entries
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>Rows:</span>
-            <select className="rows-select" value={rowsPerPage}
-              onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-              {[5, 10, 20, 50].map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
+          {/* Card header — fixed */}
+          <div className="card__header">
+            <span className="card__entry-count">
+              Showing <strong>{Math.min(indexOfLast, filteredData.length)}</strong> of{" "}
+              <strong>{filteredData.length}</strong> entries
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>Rows:</span>
+              <select className="rows-select" value={rowsPerPage}
+                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
+                {[5, 10, 20, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
           </div>
-        </div>
 
-        {/* Horizontally scrollable on small screens */}
-        <div style={{ overflowX: "auto" }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th style={{ width: "22%", textAlign: "left" }}>Entity</th>
-                <th>Time</th>
-                <th>Locales</th>
-                <th>Stage</th>
-                <th>Previous</th>
-                <th>USER</th>
-                <th>CMS</th>
-                <th>More</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {currentRows.length === 0 ? (
+          {/* Table with sticky thead + scrollable tbody */}
+          <div className="table-scroll-area">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={9} className="empty-state">
-                    No records match your current filters.
-                  </td>
+                  <th style={{ width: "22%", textAlign: "left" }}>Entity</th>
+                  <th>Time</th>
+                  <th>Locales</th>
+                  <th>Stage</th>
+                  <th>Previous</th>
+                  <th>User</th>
+                  <th>CMS</th>
+                  <th>More</th>
                 </tr>
-              ) : (
-                currentRows.map((item) => (
-                  <React.Fragment key={item._id}>
-
-                    {/* Data row */}
-                    <tr>
-                      {/* Entity: title + record ID */}
-                      <td>
-                        <div className="entity-name">{item.title}</div>
-                        <div className="entity-id">{item.entityId}</div>
-                      </td>
-
-                      {/* Timestamp */}
-                      <td>
-                        <div style={{ fontWeight: 500 }}>
-                          {new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "2px" }}>
-                          {new Date(item.createdAt).toLocaleDateString()}
-                        </div>
-                      </td>
-
-                      {/* Locale chips — capped width, tooltip shows all on hover */}
-                      <td>
-                        <div className="locales-cell">
-                          <div className="locales-cell__chips">
-                            {(item.localesChanged || []).length > 0
-                              ? item.localesChanged.map((loc) => (
-                                  <span key={loc} className="locale-tag">{loc}</span>
-                                ))
-                              : <span style={{ color: "var(--color-border)" }}>—</span>
-                            }
-                          </div>
-                          {/* Tooltip listing all locales — appears on hover */}
-                          {(item.localesChanged || []).length > 0 && (
-                            <div className="locales-cell__tooltip">
-                              {item.localesChanged.join(" · ")}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Stage badge */}
-                      <td><StageBadge value={item.stage} /></td>
-
-                      {/* Previous stage badge */}
-                      <td><StageBadge value={item.previousStage} /></td>
-
-                      {/* User — truncated to fixed width, full names shown on hover */}
-                      <td>
-                        {(item.updatedByNames || []).length > 0 ? (
-                          <div className="user-cell">
-                            <span className="user-cell__text">
-                              {item.updatedByNames.join(", ")}
-                            </span>
-                            <div className="user-cell__tooltip">
-                              {item.updatedByNames.map((name, i) => (
-                                <div key={i} className="user-cell__tooltip-name">{name}</div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <span style={{ color: "var(--color-text-muted)" }}>—</span>
-                        )}
-                      </td>
-
-                      {/* CMS link */}
-                      <td>
-                        {item.cmsLink
-                          ? <a href={item.cmsLink} target="_blank" rel="noreferrer" className="cms-link">Open ↗</a>
-                          : <span style={{ color: "var(--color-border)" }}>—</span>
-                        }
-                      </td>
-
-                      {/* Expand toggle */}
-                      <td>
-                        <button
-                          className={`more-btn ${expanded === item._id ? "more-btn--active" : ""}`}
-                          onClick={() => setExpanded(expanded === item._id ? null : item._id)}
-                        >
-                          {expanded === item._id ? "▲" : "▼"}
-                        </button>
-                      </td>
-                    </tr>
-
-                    {/* Expanded field-changes panel */}
-                    {expanded === item._id && (
+              </thead>
+              <tbody>
+                {currentRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="empty-state">No records match your current filters.</td>
+                  </tr>
+                ) : (
+                  currentRows.map((item) => (
+                    <React.Fragment key={item._id}>
                       <tr>
-                        <td colSpan={9} className="expanded-cell">
-                          <div className="expanded-inner">
-                            <div className="expanded-heading">Field Changes</div>
-
-                            {Object.keys(item.localeChanges || {}).length === 0 ? (
-                              <p style={{ color: "var(--color-text-muted)", fontSize: "14px" }}>
-                                No field changes recorded.
-                              </p>
-                            ) : (
-                              <div className="locale-blocks">
-                                {Object.entries(item.localeChanges || {}).map(([locale, changes]) => (
-                                  <div key={locale} className="locale-block">
-                                    <div className="locale-block__title">🌐 {locale.toUpperCase()}</div>
-
-                                    {(Array.isArray(changes) ? changes : [changes]).map((c, i) => (
-                                      <div key={i} className="change-row">
-                                        <span className="field-label">{c.field}</span>
-                                        <div className="diff-row">
-                                          <span className="diff-before">{getDisplayValue(c.before)}</span>
-                                          <span className="diff-arrow">→</span>
-                                          <span className="diff-after">{getDisplayValue(c.after)}</span>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                        {/* Entity */}
+                        <td>
+                          <div className="entity-name">{item.title}</div>
+                          <div className="entity-id">{item.entityId}</div>
+                        </td>
+                        {/* Time */}
+                        <td>
+                          <div style={{ fontWeight: 500 }}>
+                            {new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                          <div style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "2px" }}>
+                            {new Date(item.createdAt).toLocaleDateString()}
                           </div>
                         </td>
+                        {/* Locales — max 3 visible, tooltip if more */}
+                        <td><LocalesCell locales={item.localesChanged} /></td>
+                        {/* Stage */}
+                        <td><StageBadge value={item.stage} /></td>
+                        {/* Previous stage */}
+                        <td><StageBadge value={item.previousStage} /></td>
+                        {/* User — first name only, tooltip for rest */}
+                        <td><UserCell names={item.updatedByNames} /></td>
+                        {/* CMS link */}
+                        <td>
+                          {item.cmsLink
+                            ? <a href={item.cmsLink} target="_blank" rel="noreferrer" className="cms-link">Open ↗</a>
+                            : <span style={{ color: "var(--color-border)" }}>—</span>}
+                        </td>
+                        {/* Expand toggle */}
+                        <td>
+                          <button
+                            className={`more-btn ${expanded === item._id ? "more-btn--active" : ""}`}
+                            onClick={() => setExpanded(expanded === item._id ? null : item._id)}>
+                            {expanded === item._id ? "▲" : "▼"}
+                          </button>
+                        </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
 
-        {/* Pagination */}
-        <div className="pagination">
-          <span className="pagination__info">Page {currentPage} of {totalPages || 1}</span>
-          <div className="pagination__buttons">
-            <button className="page-btn" disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}>‹</button>
+                      {/* Expanded field-changes panel — max 5 locale blocks per row */}
+                      {expanded === item._id && (
+                        <tr>
+                          <td colSpan={8} className="expanded-cell">
+                            <div className="expanded-inner">
+                              <div className="expanded-heading">Field Changes</div>
+                              {Object.keys(item.localeChanges || {}).length === 0 ? (
+                                <p style={{ color: "var(--color-text-muted)", fontSize: "14px" }}>
+                                  No field changes recorded.
+                                </p>
+                              ) : (
+                                /* Chunk the locale entries into rows of max 5 */
+                                (() => {
+                                  const entries = Object.entries(item.localeChanges || {});
+                                  const rows    = [];
+                                  for (let i = 0; i < entries.length; i += 5)
+                                    rows.push(entries.slice(i, i + 5));
+                                  return rows.map((rowEntries, rowIdx) => (
+                                    <div key={rowIdx} className="locale-blocks">
+                                      {rowEntries.map(([locale, changes]) => (
+                                        <div key={locale} className="locale-block">
+                                          <div className="locale-block__title">🌐 {locale.toUpperCase()}</div>
+                                          {(Array.isArray(changes) ? changes : [changes]).map((c, i) => (
+                                            <div key={i} className="change-row">
+                                              <span className="field-label">{c.field}</span>
+                                              <div className="diff-row">
+                                                <span className="diff-before">{getDisplayValue(c.before)}</span>
+                                                <span className="diff-arrow">→</span>
+                                                <span className="diff-after">{getDisplayValue(c.after)}</span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ));
+                                })()
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-            {getPageNumbers().map((p) => (
-              <button key={p}
-                className={`page-btn ${p === currentPage ? "page-btn--active" : ""}`}
-                onClick={() => setCurrentPage(p)}>{p}</button>
-            ))}
-
-            <button className="page-btn" disabled={currentPage === totalPages || totalPages === 0}
-              onClick={() => setCurrentPage(currentPage + 1)}>›</button>
+          {/* Pagination — fixed at bottom */}
+          <div className="pagination">
+            <span className="pagination__info">Page {currentPage} of {totalPages || 1}</span>
+            <div className="pagination__buttons">
+              <button className="page-btn" disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}>‹</button>
+              {getPageNumbers().map((p) => (
+                <button key={p} className={`page-btn ${p === currentPage ? "page-btn--active" : ""}`}
+                  onClick={() => setCurrentPage(p)}>{p}</button>
+              ))}
+              <button className="page-btn" disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage(currentPage + 1)}>›</button>
+            </div>
           </div>
         </div>
       </div>
