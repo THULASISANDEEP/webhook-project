@@ -269,7 +269,12 @@ export default function MainDashboard() {
     if (endDate)
       f = f.filter((i) => new Date(i.createdAt) <= new Date(endDate + "T23:59:59"));
     if (selectedUsers.length > 0)
-      f = f.filter((i) => selectedUsers.some((u) => (i.updatedByNames || []).includes(u)));
+      f = f.filter((i) => selectedUsers.some(
+      (u) =>
+        (i.updatedByNames || []).some(
+          (x) => x.name === u
+        )
+    ));
     setFilteredData(f);
     setCurrentPage(1);
   };
@@ -294,7 +299,16 @@ export default function MainDashboard() {
 
   /* ── Derived option lists with counts ── */
   const allLocales = [...new Set(data.flatMap((i) => i.localesChanged || []))];
-  const allUsers   = [...new Set(data.flatMap((i) => i.updatedByNames  || []))].filter(Boolean);
+  const allUsers = [
+    ...new Set(
+      data.flatMap(
+        (i) =>
+          (i.updatedByNames || []).map(
+            (u) => u.name
+          )
+      )
+    )
+  ];
   const environment = data[0]?.environment || null;
 
   /* Count how many records in `data` contain each locale/user/stage */
@@ -313,7 +327,12 @@ export default function MainDashboard() {
   const userOptions = allUsers.map((u) => ({
     value: u,
     label: u,
-    count: data.filter((i) => (i.updatedByNames || []).includes(u)).length,
+    count: data.filter(
+      (i) =>
+        (i.updatedByNames || []).some(
+          (x) => x.name === u
+        )
+    ).length,
   }));
 
   /* ── Pagination ── */
@@ -507,7 +526,13 @@ export default function MainDashboard() {
                         {/* Previous stage */}
                         <td><StageBadge value={item.previousStage} /></td>
                         {/* User — first name only, tooltip for rest */}
-                        <td><UserCell names={item.updatedByNames} /></td>
+                        <td><UserCell
+                            names={
+                              item.updatedByNames?.map(
+                                (u) => u.name
+                              ) || []
+                            }
+                          /></td>
                         {/* CMS link */}
                         <td>
                           {item.cmsLink

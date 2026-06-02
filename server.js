@@ -25,11 +25,18 @@ const recordSchema = new mongoose.Schema({
   eventType: String,
   environment: String,
   cmsLink: String,
-  updatedBy: String,
-  updatedByEmail: String,
+  
+  lastUpdatedBy: String,
+  lastUpdatedByEmail: String,
 
   updatedByNames: {
-    type: [String],
+    type: [
+      {
+        _id: false,
+        name: String,
+        mailID: String
+      }
+    ],
     default: []
   },
 
@@ -64,6 +71,7 @@ app.post("/webhook", async (req, res) => {
       data.entity?.relationships?.item_type?.data?.id;
 
     const environment = data.environment;
+   
 
     const projectId = "ppds";
 
@@ -176,10 +184,10 @@ app.post("/webhook", async (req, res) => {
     environment,
     cmsLink,
 
-    updatedBy:
+    lastUpdatedBy:
       actor?.name || "Unknown",
 
-    updatedByEmail:
+    lastUpdatedByEmail:
       actor?.email || null,
   };
   // DO NOT UPDATE STAGE INFO WHEN CURRENT STAGE = DRAFT
@@ -243,10 +251,14 @@ Object.entries(changesPerLocale).forEach(
       {
         $set: updateObject,
         $addToSet: {
-          localesChanged: { $each: Object.keys(changesPerLocale)
+          localesChanged: {
+            $each: Object.keys(changesPerLocale)
+          },
 
-           },
-           updatedByNames: actor?.name
+          updatedByNames: {
+            name: actor?.name || "Unknown",
+            mailID: actor?.email || null
+          }
         }
         
       },

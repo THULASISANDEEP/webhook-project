@@ -153,7 +153,12 @@ export default function TranslatorDashboard() {
     const matchFrom    = !fromDate || itemDate >= new Date(fromDate);
     const matchTo      = !toDate   || itemDate <= new Date(toDate + "T23:59:59");
     const matchLocale  = selectedLocales.length === 0 || selectedLocales.some((l) => item.localesChanged?.includes(l));
-    const matchUser    = selectedUsers.length === 0 || selectedUsers.some((u) => (item.updatedByNames || []).includes(u));
+    const matchUser    = selectedUsers.length === 0 || selectedUsers.some(
+  (u) =>
+    (item.updatedByNames || []).some(
+      (x) => x.name === u
+    )
+);
     return matchSearch && matchFrom && matchTo && matchLocale && matchUser;
   });
 
@@ -173,7 +178,16 @@ export default function TranslatorDashboard() {
 
   const hasActiveFilters = search || fromDate || toDate || selectedLocales.length > 0 || selectedUsers.length > 0;
   const allLocales        = [...new Set(data.flatMap((i) => i.localesChanged || []))];
-  const allUsers          = [...new Set(data.flatMap((i) => i.updatedByNames  || []))].filter(Boolean);
+  const allUsers = [
+    ...new Set(
+      data.flatMap(
+        (i) =>
+          (i.updatedByNames || []).map(
+            (u) => u.name
+          )
+      )
+    )
+  ];
   const environment       = data[0]?.environment || null;
 
   /* Options with counts */
@@ -183,7 +197,12 @@ export default function TranslatorDashboard() {
   }));
   const userOptions = allUsers.map((u) => ({
     value: u, label: u,
-    count: data.filter((i) => (i.updatedByNames || []).includes(u)).length,
+    count: data.filter(
+  (i) =>
+    (i.updatedByNames || []).some(
+      (x) => x.name === u
+    )
+).length,
   }));
 
   const openLocales = () => { setShowLocales(true);  setShowUsers(false); };
@@ -336,7 +355,13 @@ export default function TranslatorDashboard() {
                         </td>
                         <td><LocalesCell locales={item.localesChanged} /></td>
                         <td><StageBadge value={item.stage} /></td>
-                        <td><UserCell names={item.updatedByNames} /></td>
+                        <td><UserCell
+  names={
+    item.updatedByNames?.map(
+      (u) => u.name
+    ) || []
+  }
+/></td>
                         <td>
                           {item.cmsLink
                             ? <a href={item.cmsLink} target="_blank" rel="noreferrer" className="cms-link">Open ↗</a>
