@@ -22,6 +22,18 @@ const recordSchema = new mongoose.Schema({
   itemTypeId: String,
   stage: String,
   previousStage: String,
+  changeStageToReview: {
+    date: String,
+
+    users: [
+      {
+        _id: false,
+        name: String,
+        mailID: String,
+        time: String
+      }
+    ]
+  },
   eventType: String,
   environment: String,
   cmsLink: String,
@@ -174,6 +186,10 @@ app.post("/webhook", async (req, res) => {
     entityId,
     
   });
+  const today = new Date().toLocaleDateString();
+
+  const currentTime =
+    new Date().toLocaleTimeString();
 
   const updateObject = {
     entityId,
@@ -197,11 +213,41 @@ app.post("/webhook", async (req, res) => {
   }
 
   // UPDATE TIME ONLY WHEN MOVED TO REVIEW
+  // UPDATE TIME ONLY WHEN MOVED TO REVIEW
   if (currentStage === "review") {
+
     updateObject.createdAt = new Date();
+
+    updateObject.changeStageToReview =
+      existingRecord?.changeStageToReview || {
+        date: today,
+        users: []
+      };
+
+    const existingUser =
+      updateObject.changeStageToReview.users.find(
+        (u) => u.mailID === actor?.email
+      );
+
+    if (existingUser) {
+
+      existingUser.time = currentTime;
+
+    } else {
+
+      updateObject.changeStageToReview.users.push({
+        name: actor?.name || "Unknown",
+        mailID: actor?.email || null,
+        time: currentTime
+      });
+
+    }
+
   } else {
+
     updateObject.createdAt =
       existingRecord?.createdAt || new Date();
+
   }
 
 updateObject.localeChanges =

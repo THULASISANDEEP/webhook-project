@@ -554,6 +554,61 @@ export default function MainDashboard() {
                         <tr>
                           <td colSpan={8} className="expanded-cell">
                             <div className="expanded-inner">
+                              {/* REVIEW HISTORY */}
+{item.changeStageToReview?.users?.length > 0 && (
+  <div
+    style={{
+      marginBottom: "20px",
+      padding: "15px",
+      border: "1px solid #e5e7eb",
+      borderRadius: "12px",
+      background: "#fafafa",
+    }}
+  >
+    <h4 style={{ marginBottom: "10px" }}>
+      Review History
+    </h4>
+
+    <div
+      style={{
+        fontSize: "13px",
+        color: "#666",
+        marginBottom: "10px",
+      }}
+    >
+      Date: {item.changeStageToReview.date}
+    </div>
+
+    {item.changeStageToReview.users.map(
+      (user, index) => (
+        <div
+          key={index}
+          style={{
+            padding: "8px 0",
+            borderBottom:
+              index !==
+              item.changeStageToReview.users.length - 1
+                ? "1px solid #ddd"
+                : "none",
+          }}
+        >
+          <div>
+            <strong>{user.name}</strong>
+          </div>
+
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#666",
+            }}
+          >
+            {user.time}
+          </div>
+        </div>
+      )
+    )}
+  </div>
+)}
                               <div className="expanded-heading">Field Changes</div>
                               {Object.keys(item.localeChanges || {}).length === 0 ? (
                                 <p style={{ color: "var(--color-text-muted)", fontSize: "14px" }}>

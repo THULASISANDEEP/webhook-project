@@ -6,6 +6,8 @@ export const getActorFromVersion = async (versionId) => {
     let roleId = null;
 
     const version = await datoClient.itemVersions.find(versionId);
+    console.log("VERSION:", version);
+    console.log("EDITOR:", version.editor);
 
     if (version?.editor?.id) {
       editorId = version.editor.id;
