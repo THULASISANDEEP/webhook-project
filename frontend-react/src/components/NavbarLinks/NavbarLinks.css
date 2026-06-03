@@ -1,0 +1,9 @@
+.navbar__link {
+  display: inline-flex; align-items: center;
+  padding: 6px 14px; border-radius: var(--radius-sm); border: none;
+  background: transparent; color: var(--color-text-secondary);
+  font-size: 14px; font-weight: 500;
+  transition: background 0.15s, color 0.15s; font-family: var(--font-base);
+}
+.navbar__link:hover       { background: var(--color-bg-subtle); color: var(--color-text); }
+.navbar__link--active     { background: var(--color-primary-light); color: var(--color-primary); }

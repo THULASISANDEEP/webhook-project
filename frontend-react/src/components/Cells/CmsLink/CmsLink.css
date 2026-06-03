@@ -1,0 +1,2 @@
+.cms-link { color: var(--color-primary); font-weight: 600; font-size: 13px; }
+.cms-link:hover { text-decoration: underline; }

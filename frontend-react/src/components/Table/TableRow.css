@@ -1,0 +1,2 @@
+.entity-name { font-weight: 600; font-size: 14px; color: var(--color-text); }
+.entity-id   { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; font-family: monospace; }

@@ -1,0 +1,43 @@
+.locales-cell { position: relative; display: inline-flex; align-items: center; gap: 3px; }
+.locales-cell__chips { display: flex; flex-wrap: nowrap; align-items: center; gap: 3px; }
+
+.locale-tag {
+  display: inline-block; padding: 2px 7px;
+  background: var(--color-primary-light); color: var(--color-primary-dark);
+  border-radius: var(--radius-sm); font-size: 12px; font-weight: 600;
+  text-transform: uppercase; white-space: nowrap;
+}
+.locale-tag--more {
+  background: var(--color-bg); color: var(--color-text-muted);
+  border: 1px solid var(--color-border); cursor: default; letter-spacing: 0;
+}
+
+.locales-cell__tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1F2937;
+  border-radius: 10px;
+  padding: 8px 12px;
+  z-index: 300;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  pointer-events: none;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 320px;
+}
+.locales-cell:hover .locales-cell__tooltip { display: flex; }
+.locales-cell__tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: 100%; left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent; border-bottom-color: #1F2937;
+}
+.locales-cell__tooltip-chip {
+  background: rgba(255,255,255,0.15); color: #F9FAFB;
+  padding: 2px 8px; border-radius: 6px; font-size: 12px;
+  font-weight: 600; text-transform: uppercase;
+}

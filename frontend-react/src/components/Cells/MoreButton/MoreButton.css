@@ -1,0 +1,8 @@
+.more-btn {
+  border: 1px solid var(--color-border); background: var(--color-white);
+  color: var(--color-text-muted); font-size: 12px; padding: 5px 10px;
+  border-radius: var(--radius-sm); font-weight: 600; font-family: var(--font-base);
+  transition: all 0.12s;
+}
+.more-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.more-btn--active { background: var(--color-primary-light); border-color: var(--color-primary); color: var(--color-primary); }

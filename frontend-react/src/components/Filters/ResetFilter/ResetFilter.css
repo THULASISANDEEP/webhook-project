@@ -1,0 +1,6 @@
+.reset-btn {
+  padding: 0 16px; height: 42px; border-radius: var(--radius-md);
+  border: 1px solid #FCA5A5; background: #FEF2F2; color: #B91C1C;
+  font-size: 13px; font-weight: 600; font-family: var(--font-base); transition: background 0.15s;
+}
+.reset-btn:hover { background: #FEE2E2; }

@@ -1,0 +1,10 @@
+.suggestions-box {
+  position: absolute; top: 48px; left: 0;
+  background: var(--color-white); border: 1px solid var(--color-border);
+  border-radius: 12px; box-shadow: var(--shadow-lg);
+  width: 280px; z-index: 200; overflow: hidden;
+}
+.suggestions-box__item       { padding: 10px 16px; cursor: pointer; border-bottom: 1px solid var(--color-bg); transition: background 0.1s; }
+.suggestions-box__item:hover { background: var(--color-bg-subtle); }
+.suggestions-box__title      { font-weight: 600; font-size: 14px; color: var(--color-text); }
+.suggestions-box__id         { color: var(--color-text-muted); font-size: 12px; margin-top: 2px; }

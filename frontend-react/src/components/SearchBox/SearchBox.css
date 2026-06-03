@@ -1,0 +1,10 @@
+.search-wrapper {
+  display: flex; align-items: center;
+  background: var(--color-white); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); padding: 0 12px; height: 42px; width: 280px;
+  box-shadow: var(--shadow-sm); transition: border-color 0.15s;
+}
+.search-wrapper:focus-within { border-color: var(--color-primary); }
+.search-wrapper__icon  { font-size: 14px; margin-right: 8px; opacity: 0.45; }
+.search-wrapper__input { border: none; outline: none; font-size: 14px; flex: 1; background: transparent; color: var(--color-text); font-family: var(--font-base); }
+.search-wrapper__clear { border: none; background: none; color: var(--color-text-muted); font-size: 13px; padding: 2px 4px; border-radius: 4px; }

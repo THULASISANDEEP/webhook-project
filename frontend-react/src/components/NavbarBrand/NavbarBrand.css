@@ -1,0 +1,4 @@
+.navbar__brand {
+  font-size: 17px; font-weight: 700; color: var(--color-text);
+  margin-right: 12px; letter-spacing: -0.01em;
+}
