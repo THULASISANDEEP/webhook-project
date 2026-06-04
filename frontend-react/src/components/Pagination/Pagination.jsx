@@ -1,10 +1,10 @@
-import { ROWS_PER_PAGE_OPTIONS } from "../../constants/pagination";
 import "./Pagination.css";
 
 export default function Pagination({
-  currentPage, totalPages, indexOfLast, totalCount,
-  rowsPerPage, onRowsChange, onPageChange, getPageNumbers,
-  entryLabel = "entries",
+  currentPage,
+  totalPages,
+  onPageChange,
+  getPageNumbers,
 }) {
   return (
     <>

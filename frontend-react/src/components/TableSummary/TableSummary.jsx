@@ -1,10 +1,14 @@
 import "./TableSummary.css";
+import {
+  ROWS_PER_PAGE_OPTIONS,
+} from "../../constants/pagination";
 
 export default function TableSummary({
   totalCount,
   indexOfLast,
   rowsPerPage,
   onRowsChange,
+  entryLabel = "entries",
 }) {
   return (
     <div className="table-summary">
@@ -17,7 +21,7 @@ export default function TableSummary({
         <strong>
           {totalCount}
         </strong>{" "}
-        entries
+        {entryLabel}
       </span>
 
       <div className="table-summary__rows">
@@ -30,7 +34,7 @@ export default function TableSummary({
             onRowsChange(Number(e.target.value))
           }
         >
-          {[5, 10, 20, 50].map((n) => (
+          {ROWS_PER_PAGE_OPTIONS.map((n) => (
             <option key={n} value={n}>
               {n}
             </option>
