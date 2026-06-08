@@ -22,18 +22,7 @@ const recordSchema = new mongoose.Schema({
   itemTypeId: String,
   stage: String,
   previousStage: String,
-  changeStageToReview: {
-    date: String,
-
-    users: [
-      {
-        _id: false,
-        name: String,
-        mailID: String,
-        time: String
-      }
-    ]
-  },
+  
   eventType: String,
   environment: String,
   cmsLink: String,
@@ -122,6 +111,7 @@ app.post("/webhook", async (req, res) => {
     const isLocaleKey = (key) => /^[a-z]{2}(-[A-Z]{2})?$/.test(key);
 
     const changesPerLocale = {};
+    
 
     if (data.previous_entity) {
       for (const field in currentAttributes) {
@@ -186,10 +176,7 @@ app.post("/webhook", async (req, res) => {
     entityId,
     
   });
-  const today = new Date().toLocaleDateString();
-
-  const currentTime =
-    new Date().toLocaleTimeString();
+  
 
   const updateObject = {
     entityId,
@@ -208,8 +195,24 @@ app.post("/webhook", async (req, res) => {
   };
   // DO NOT UPDATE STAGE INFO WHEN CURRENT STAGE = DRAFT
   if (currentStage !== "draft") {
+
     updateObject.stage = currentStage;
-    updateObject.previousStage = previousStage;
+
+    if (
+      currentStage === "review" &&
+      previousStage === "draft"
+    ) {
+
+      updateObject.previousStage =
+        existingRecord?.stage || previousStage;
+
+    } else {
+
+      updateObject.previousStage =
+        previousStage;
+
+    }
+
   }
 
   // UPDATE TIME ONLY WHEN MOVED TO REVIEW
@@ -218,31 +221,7 @@ app.post("/webhook", async (req, res) => {
 
     updateObject.createdAt = new Date();
 
-    updateObject.changeStageToReview =
-      existingRecord?.changeStageToReview || {
-        date: today,
-        users: []
-      };
-
-    const existingUser =
-      updateObject.changeStageToReview.users.find(
-        (u) => u.mailID === actor?.email
-      );
-
-    if (existingUser) {
-
-      existingUser.time = currentTime;
-
-    } else {
-
-      updateObject.changeStageToReview.users.push({
-        name: actor?.name || "Unknown",
-        mailID: actor?.email || null,
-        time: currentTime
-      });
-
-    }
-
+  
   } else {
 
     updateObject.createdAt =
