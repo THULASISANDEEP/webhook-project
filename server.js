@@ -3,8 +3,10 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import { getActorFromVersion } from "./services/datocmsService.js";
+import { datoClient } from "./services/datocmsClient.js";
 
 dotenv.config();
+
 
 const app = express();
 app.use(cors());
@@ -63,6 +65,49 @@ const Record = mongoose.model("Record", recordSchema);
 app.post("/webhook", async (req, res) => {
   try {
     const data = req.body;
+    /*
+    console.log("=================================");
+    console.log("WEBHOOK PAYLOAD");
+    console.log("=================================");
+
+    console.dir(data, {
+      depth: null,
+      colors: true
+    });
+
+    console.log("=================================");
+    console.log(
+      "EVENT TYPE:",
+      data.event_type
+    );
+
+    console.log(
+      "CURRENT STAGE:",
+      data.entity?.meta?.stage
+    );
+
+    console.log(
+      "PREVIOUS STAGE:",
+      data.previous_entity?.meta?.stage
+    );
+    console.log(
+      "PUBLISHED AT:",
+      data.entity?.meta?.published_at
+    );
+
+    console.log(
+      "STATUS:",
+      data.entity?.meta?.status
+    );
+    console.log(Object.keys(datoClient));
+    console.log(
+      Object.keys(datoClient.items)
+    );
+    console.log(
+      Object.getOwnPropertyNames(
+        Object.getPrototypeOf(datoClient.items)
+      )
+    );*/
 
     const entity = data.entity;
     const versionId = data.entity?.meta?.current_version;
@@ -79,16 +124,8 @@ app.post("/webhook", async (req, res) => {
     const cmsLink = `https://${projectId}.admin.datocms.com/environments/${environment}/editor/item_types/${itemTypeId}/items/${entityId}`;
 
 
-/* ================== Fetch actor ================== */
-    const actor = versionId
-      ? await getActorFromVersion(versionId)
-      : null;
 
-    console.log("🎭 ACTOR:", actor);
-    const updatedBy =
-      actor?.userId ||
-      entity?.relationships?.creator?.data?.id ||
-      "unknown";
+    
 
     // ================== STRICT EN_GB TITLE ==================
     const titleField = data.entity?.attributes?.title;
@@ -165,10 +202,63 @@ app.post("/webhook", async (req, res) => {
         }
       }
     }
+    const hasContentChanges =
+      Object.keys(changesPerLocale).length > 0;
+
+    let actor = null;
+
+    if (hasContentChanges) {
+
+      actor = versionId
+        ? await getActorFromVersion(versionId)
+        : null;
+
+      console.log("🎭 ACTOR:", actor);
+
+    }
+    
+    
+    console.log(
+      "✅ Stored:",
+      entityId,
+      "| User:",
+      actor?.userId || "No Content Change",
+      "| Email:",
+      actor?.email || "-"
+    );
     
 
     const currentStage = data.entity?.meta?.stage;
     const previousStage = data.previous_entity?.meta?.stage;
+    /*publish on approving*/
+    if (
+      currentStage === "approved" &&
+      previousStage === "review"
+    ) {
+
+      try {
+
+        console.log(
+          `🚀 Publishing Item ${entityId}`
+        );
+
+        await datoClient.items.publish(entityId);
+
+        console.log(
+          `✅ Item Published ${entityId}`
+        );
+
+      } catch (err) {
+
+        console.error(
+          "❌ Publish Failed:",
+          err.message
+        );
+
+      }
+
+    }
+
 
     /* ================== SAVE ================== */
 
@@ -188,11 +278,15 @@ app.post("/webhook", async (req, res) => {
     cmsLink,
 
     lastUpdatedBy:
-      actor?.name || "Unknown",
+      hasContentChanges
+        ? actor?.name || "Unknown"
+        : existingRecord?.lastUpdatedBy,
 
     lastUpdatedByEmail:
-      actor?.email || null,
-  };
+      hasContentChanges
+        ? actor?.email || null
+        : existingRecord?.lastUpdatedByEmail,
+      };
   // DO NOT UPDATE STAGE INFO WHEN CURRENT STAGE = DRAFT
   if (currentStage !== "draft") {
 
@@ -267,7 +361,21 @@ Object.entries(changesPerLocale).forEach(
 
     });
 });
-    
+
+    const addToSetObject = {
+      localesChanged: {
+        $each: Object.keys(changesPerLocale)
+      }
+    };
+
+    if (hasContentChanges) {
+
+      addToSetObject.updatedByNames = {
+        name: actor?.name || "Unknown",
+        mailID: actor?.email || null
+      };
+
+    }
 
     await Record.findOneAndUpdate(
       {
@@ -275,31 +383,13 @@ Object.entries(changesPerLocale).forEach(
       },
       {
         $set: updateObject,
-        $addToSet: {
-          localesChanged: {
-            $each: Object.keys(changesPerLocale)
-          },
-
-          updatedByNames: {
-            name: actor?.name || "Unknown",
-            mailID: actor?.email || null
-          }
-        }
+        $addToSet: addToSetObject
         
       },
       { upsert: true, returnDocument: "after" }
     );
     //TODO
-    console.log(
-    "✅ Stored:",
-    entityId,
-    "| User:",
-    updatedBy,
-    "| Email:",
-    actor?.email,
-    "| Role:",
-    actor?.role
-  );
+    
     //TODO
     res.status(200).json({ message: "Stored" });
 
