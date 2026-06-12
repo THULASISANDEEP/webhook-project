@@ -287,28 +287,65 @@ app.post("/webhook", async (req, res) => {
         ? actor?.email || null
         : existingRecord?.lastUpdatedByEmail,
       };
-  // DO NOT UPDATE STAGE INFO WHEN CURRENT STAGE = DRAFT
+
+  // SAVE CURRENT STAGE EXCEPT DRAFT
   if (currentStage !== "draft") {
-
     updateObject.stage = currentStage;
+  }
 
-    if (
-      currentStage === "review" &&
-      previousStage === "draft"
+  /*
+    Ignore reject -> draft (or approved -> draft)
+    Keep the last meaningful workflow state.
+  */
+  if (currentStage === "draft") {
+    updateObject.previousStage =
+      existingRecord?.previousStage;
+  }
+
+  /*
+    draft -> review
+    If this item was previously rejected and sent back for rework,
+    show reject -> review instead of draft -> review.
+  */
+  else if (
+    currentStage === "review" &&
+    previousStage === "draft"
+  ) {
+
+    // First time entering workflow
+    if (!existingRecord?.stage) {
+
+      updateObject.previousStage = "draft";
+
+    }
+
+    // Coming back from reject/approved
+    else if (
+      existingRecord.stage &&
+      existingRecord.stage !== "review"
     ) {
 
       updateObject.previousStage =
-        existingRecord?.stage || previousStage;
+        existingRecord.stage;
 
-    } else {
+    }
+
+    // review -> draft -> review
+    else {
 
       updateObject.previousStage =
-        previousStage;
+        existingRecord.previousStage;
 
     }
 
   }
 
+  /* NORMAL TRANSITIONS */
+  else {
+
+    updateObject.previousStage = previousStage;
+
+  }
   // UPDATE TIME ONLY WHEN MOVED TO REVIEW
   // UPDATE TIME ONLY WHEN MOVED TO REVIEW
   if (currentStage === "review") {
@@ -376,6 +413,9 @@ Object.entries(changesPerLocale).forEach(
       };
 
     }
+    console.log("CURRENT STAGE:", currentStage);
+    console.log("PREVIOUS STAGE:", previousStage);
+    console.log("STAGE TO SAVE:", updateObject.stage);
 
     await Record.findOneAndUpdate(
       {
